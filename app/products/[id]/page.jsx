@@ -1,0 +1,269 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues } from '@/lib/api/medusa'
+import Header from '@/components/molecules/Header/Header'
+import Footer from '@/components/molecules/Footer/Footer'
+import Button from '@/components/atoms/Button/Button'
+import Badge from '@/components/atoms/Badge/Badge'
+import { useCart } from '@/lib/context/CartContext'
+import styles from './page.module.css'
+
+export default function ProductDetailPage() {
+    const params = useParams()
+    const router = useRouter()
+    const { addToCart } = useCart()
+    const [product, setProduct] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [selectedOptions, setSelectedOptions] = useState({})
+    const [selectedVariant, setSelectedVariant] = useState(null)
+
+    useEffect(() => {
+        loadProduct()
+    }, [params.id])
+
+    // Seleccionar variante basada en las opciones seleccionadas
+    useEffect(() => {
+        if (!product?.variants || !product?.options) return
+
+        // Encontrar la variante que coincide con todas las opciones seleccionadas
+        const matchingVariant = product.variants.find(variant => {
+            if (!variant.options) return false
+            return Object.entries(selectedOptions).every(([optionId, value]) => {
+                return variant.options?.some(
+                    variantOption => variantOption.option_id === optionId && variantOption.value === value
+                )
+            })
+        })
+
+        setSelectedVariant(matchingVariant || null)
+    }, [selectedOptions, product])
+
+    const loadProduct = async () => {
+        setLoading(true)
+        setError(null)
+        
+        try {
+            const fetchedProduct = await getProduct(params.id)
+            if (fetchedProduct) {
+                setProduct(fetchedProduct)
+                
+                // Inicializar opciones seleccionadas con la primera variante
+                if (fetchedProduct.options && fetchedProduct.variants?.[0]) {
+                    const initialOptions = {}
+                    fetchedProduct.variants[0].options?.forEach(opt => {
+                        initialOptions[opt.option_id] = opt.value
+                    })
+                    setSelectedOptions(initialOptions)
+                    setSelectedVariant(fetchedProduct.variants[0])
+                }
+            } else {
+                setError('Producto no encontrado')
+            }
+        } catch (err) {
+            console.error('Error loading product:', err)
+            setError('Error al cargar el producto')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <main className={styles.main}>
+                <Header />
+                <div className={styles.container}>
+                    <div className={styles.loading}>
+                        <div className={styles.spinner} />
+                        <p>Cargando producto...</p>
+                    </div>
+                </div>
+                <Footer />
+            </main>
+        )
+    }
+
+    if (error || !product) {
+        return (
+            <main className={styles.main}>
+                <Header />
+                <div className={styles.container}>
+                    <div className={styles.error}>
+                        <p>{error || 'Producto no encontrado'}</p>
+                        <Button variant="primary" onClick={() => router.push('/products')}>
+                            Volver a Productos
+                        </Button>
+                    </div>
+                </div>
+                <Footer />
+            </main>
+        )
+    }
+
+    const handleAddToCart = () => {
+        if (selectedVariant) {
+            addToCart(product, selectedVariant)
+        }
+    }
+
+    const handleOptionChange = (optionId, value) => {
+        setSelectedOptions(prev => ({
+            ...prev,
+            [optionId]: value
+        }))
+    }
+
+    // Obtener precio de la variante seleccionada usando helper de Medusa v2
+    const variantPrice = getVariantPrice(selectedVariant) || getVariantPrice(product.variants?.[0])
+    const price = variantPrice?.amount || 0
+    const currencyCode = variantPrice?.currency_code || 'EUR'
+    
+    // En Medusa v2, el inventario puede estar en manage_inventory y allow_backorder
+    const inventory = selectedVariant?.inventory_quantity ?? product.variants?.[0]?.inventory_quantity ?? 0
+    const manageInventory = selectedVariant?.manage_inventory ?? true
+
+    return (
+        <main className={styles.main}>
+            <Header />
+
+            <div className={styles.container}>
+                <div className={styles.breadcrumb}>
+                    <a href="/products">Productos</a>
+                    <span>/</span>
+                    <span>{product.title}</span>
+                </div>
+
+                <div className={styles.content}>
+                    <div className={styles.imageSection}>
+                        <div className={styles.imageWrapper}>
+                            {product.thumbnail ? (
+                                <img
+                                    src={product.thumbnail}
+                                    alt={product.title}
+                                    className={styles.image}
+                                />
+                            ) : (
+                                <div className={styles.placeholder}>
+                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <circle cx="8.5" cy="8.5" r="1.5" />
+                                        <polyline points="21,15 16,10 5,21" />
+                                    </svg>
+                                </div>
+                            )}
+                            {product.metadata?.isNew && (
+                                <Badge variant="new" className={styles.badge}>Nuevo</Badge>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className={styles.details}>
+                        <div className={styles.header}>
+                            {product.collection && (
+                                <span className={styles.collection}>{product.collection.title}</span>
+                            )}
+                            <h1 className={styles.title}>{product.title}</h1>
+                        </div>
+
+                        <p className={styles.description}>{product.description}</p>
+
+                        {/* Selector de opciones/variantes */}
+                        {product.options && product.options.length > 0 && (
+                            <div className={styles.optionsSection}>
+                                {product.options.map(option => {
+                                    const availableValues = getAvailableOptionValues(product, option, selectedOptions)
+                                    return (
+                                        <div key={option.id} className={styles.optionGroup}>
+                                            <label className={styles.optionLabel}>{option.title}:</label>
+                                            <div className={styles.optionValues}>
+                                                {availableValues.map(value => (
+                                                    <button
+                                                        key={value.id}
+                                                        className={`${styles.optionButton} ${
+                                                            selectedOptions[option.id] === value.value 
+                                                                ? styles.optionButtonActive 
+                                                                : ''
+                                                        }`}
+                                                        onClick={() => handleOptionChange(option.id, value.value)}
+                                                    >
+                                                        {value.value}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+
+                        {/* Variante seleccionada */}
+                        {selectedVariant && (
+                            <div className={styles.variant}>
+                                <span className={styles.variantLabel}>Selección:</span>
+                                <span className={styles.variantValue}>
+                                    {selectedVariant.options?.map((opt, index) => {
+                                        const optionTitle = product.options?.find(o => o.id === opt.option_id)?.title
+                                        return (
+                                            <span key={opt.id}>
+                                                {optionTitle}: {opt.value}
+                                                {index < selectedVariant.options.length - 1 && ' / '}
+                                            </span>
+                                        )
+                                    })}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className={styles.priceSection}>
+                            <span className={styles.price}>{formatPrice(price, currencyCode)}</span>
+                            <span className={styles.stock}>
+                                {!manageInventory || inventory > 0
+                                    ? manageInventory ? `${inventory} en stock` : 'Disponible'
+                                    : 'Agotado'
+                                }
+                            </span>
+                        </div>
+
+                        <div className={styles.actions}>
+                            <Button
+                                variant="primary"
+                                size="large"
+                                fullWidth
+                                onClick={handleAddToCart}
+                                disabled={manageInventory && inventory === 0}
+                            >
+                                Añadir al carrito
+                            </Button>
+                        </div>
+
+                        <div className={styles.meta}>
+                            <div className={styles.metaItem}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                                <span>Envío rápido a tu estudio</span>
+                            </div>
+                            <div className={styles.metaItem}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg>
+                                <span>100% productos auténticos</span>
+                            </div>
+                            <div className={styles.metaItem}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                <span>Política de devolución de 30 días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <Footer />
+        </main>
+    )
+}

@@ -1,0 +1,21 @@
+{
+    "name": "abtattoo-storefront",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 3000",
+        "build": "next build",
+        "start": "next start -p 3000",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "next": "^14.2.0",
+        "react": "^18.3.0",
+        "react-dom": "^18.3.0",
+        "@medusajs/js-sdk": "^2.0.0",
+        "@stripe/stripe-js": "^3.0.6",
+        "@stripe/react-stripe-js": "^2.6.2",
+        "axios": "^1.6.7"
+    },
+    "devDependencies": {}
+}

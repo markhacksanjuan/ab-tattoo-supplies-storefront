@@ -1,0 +1,65 @@
+.card {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+}
+
+/* Variants */
+.default {
+    background-color: var(--color-bg-secondary);
+}
+
+.elevated {
+    background-color: var(--color-bg-elevated);
+    box-shadow: var(--shadow-md);
+}
+
+.outlined {
+    background-color: transparent;
+    border-color: var(--color-gray-200);
+}
+
+.gold {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-gold-dark);
+}
+
+/* Padding */
+.padding-none {
+    padding: 0;
+}
+
+.padding-small {
+    padding: var(--spacing-md);
+}
+
+.padding-medium {
+    padding: var(--spacing-lg);
+}
+
+.padding-large {
+    padding: var(--spacing-xl);
+}
+
+/* Hoverable */
+.hoverable {
+    cursor: pointer;
+}
+
+.hoverable:hover {
+    border-color: var(--color-gold);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg), var(--shadow-gold);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .padding-large {
+        padding: var(--spacing-lg);
+    }
+
+    .padding-medium {
+        padding: var(--spacing-md);
+    }
+}

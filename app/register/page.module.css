@@ -1,0 +1,105 @@
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    padding-top: calc(var(--header-height) + var(--spacing-xxl));
+}
+
+.formWrapper {
+    width: 100%;
+    max-width: 500px;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xxl);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h3);
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.subtitle {
+    color: var(--color-white-muted);
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.socialAuth {
+    margin-bottom: var(--spacing-lg);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    color: var(--color-white-muted);
+    font-size: var(--font-size-small);
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-gray-100);
+}
+
+.divider span {
+    padding: 0 var(--spacing-md);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.error {
+    padding: var(--spacing-md);
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    font-size: var(--font-size-small);
+    text-align: center;
+}
+
+.footer {
+    margin-top: var(--spacing-xl);
+    text-align: center;
+    color: var(--color-white-muted);
+    font-size: var(--font-size-small);
+}
+
+.link {
+    color: var(--color-gold);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+}

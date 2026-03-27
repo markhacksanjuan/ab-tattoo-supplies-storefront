@@ -1,0 +1,118 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    text-decoration: none;
+    transition: all var(--transition-normal);
+}
+
+.card:hover {
+    border-color: var(--color-gold);
+    /* transform: translateY(-4px); */
+    box-shadow: var(--shadow-lg), var(--shadow-gold);
+}
+
+/* Image */
+.imageWrapper {
+    position: relative;
+    aspect-ratio: 1;
+    background-color: var(--color-bg-tertiary);
+    overflow: hidden;
+}
+
+.image {
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.card:hover .image {
+    transform: scale(1.05);
+}
+
+.placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray-300);
+}
+
+.badge {
+    position: absolute;
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+}
+
+/* Content */
+.content {
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h6);
+    color: var(--color-white);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    margin-bottom: var(--spacing-xs);
+    transition: color var(--transition-normal);
+}
+
+.card:hover .title {
+    color: var(--color-gold);
+}
+
+.description {
+    font-size: var(--font-size-small);
+    color: var(--color-white-muted);
+    line-height: var(--line-height-normal);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+}
+
+/* Footer */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-gray-100);
+}
+
+.priceWrapper {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+}
+
+.price {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h5);
+    color: var(--color-gold);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .content {
+        padding: var(--spacing-md);
+    }
+
+    .title {
+        font-size: var(--font-size-body);
+    }
+
+    .price {
+        font-size: var(--font-size-h6);
+    }
+}

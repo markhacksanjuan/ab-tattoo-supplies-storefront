@@ -1,0 +1,273 @@
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    padding-top: calc(var(--header-height) + var(--spacing-xxl));
+    width: 100%;
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xxxl);
+    color: var(--color-white-muted);
+    gap: var(--spacing-md);
+    min-height: 400px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xxxl);
+    color: var(--color-white-muted);
+    gap: var(--spacing-lg);
+    min-height: 400px;
+    text-align: center;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xl);
+    font-size: var(--font-size-small);
+    color: var(--color-white-muted);
+}
+
+.breadcrumb a {
+    color: var(--color-gold);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xxl);
+}
+
+/* Image Section */
+.imageSection {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.imageWrapper {
+    position: relative;
+    aspect-ratio: 1;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray-400);
+}
+
+.badge {
+    position: absolute;
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
+}
+
+/* Details */
+.details {
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.collection {
+    display: inline-block;
+    color: var(--color-gold);
+    font-size: var(--font-size-small);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    margin-bottom: var(--spacing-xs);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h2);
+    color: var(--color-white);
+}
+
+.description {
+    color: var(--color-white-muted);
+    line-height: var(--line-height-relaxed);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Selector de opciones/variantes */
+.optionsSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.optionGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.optionLabel {
+    color: var(--color-white);
+    font-weight: 500;
+    font-size: var(--font-size-small);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+}
+
+.optionValues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.optionButton {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-md);
+    color: var(--color-white-muted);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.optionButton:hover {
+    border-color: var(--color-gold);
+    color: var(--color-white);
+}
+
+.optionButtonActive {
+    background-color: var(--color-gold);
+    border-color: var(--color-gold);
+    color: var(--color-black);
+    font-weight: 500;
+}
+
+.optionButtonActive:hover {
+    background-color: var(--color-gold-hover);
+    border-color: var(--color-gold-hover);
+    color: var(--color-black);
+}
+
+.variant {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.variantLabel {
+    color: var(--color-white-muted);
+}
+
+.variantValue {
+    color: var(--color-white);
+    font-weight: 500;
+}
+
+.priceSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.price {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h3);
+    color: var(--color-gold);
+}
+
+.stock {
+    color: var(--color-success);
+    font-size: var(--font-size-small);
+}
+
+.actions {
+    margin-bottom: var(--spacing-xl);
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.metaItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: var(--color-white-muted);
+    font-size: var(--font-size-small);
+}
+
+.metaItem svg {
+    color: var(--color-gold);
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .content {
+        grid-template-columns: 1fr;
+    }
+
+    .imageSection {
+        position: static;
+    }
+}
