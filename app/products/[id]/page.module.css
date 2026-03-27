@@ -195,9 +195,9 @@
 }
 
 .optionButtonActive:hover {
-    background-color: var(--color-gold-hover);
+    background-color: transparent;
     border-color: var(--color-gold-hover);
-    color: var(--color-black);
+    color: var(--color-gold);
 }
 
 .variant {

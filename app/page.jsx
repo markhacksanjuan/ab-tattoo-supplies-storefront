@@ -2,33 +2,34 @@ import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import Button from '@/components/atoms/Button/Button'
 import Link from 'next/link'
+import { Palette, Syringe, Droplets, Trophy, Truck, MessageCircle, ShieldCheck } from 'lucide-react'
 import styles from './page.module.css'
 
 export default function Home() {
     const categories = [
         {
             id: 'inks',
-            title: 'Inks',
-            description: 'Premium tattoo inks from top brands',
-            icon: '🎨'
+            title: 'Tintas',
+            description: 'Tintas de tatuaje premium de las mejores marcas',
+            Icon: Palette,
         },
         {
             id: 'needles',
-            title: 'Needles',
-            description: 'Precision needles for every style',
-            icon: '💉'
+            title: 'Agujas',
+            description: 'Agujas de precisión para cada estilo',
+            Icon: Syringe,
         },
-        {
-            id: 'machines',
-            title: 'Machines',
-            description: 'Professional tattoo machines',
-            icon: '⚡'
-        },
+        // {
+        //     id: 'machines',
+        //     title: 'Máquinas',
+        //     description: 'Máquinas de tatuaje profesionales',
+        //     Icon: Zap,
+        // },
         {
             id: 'supplies',
-            title: 'Supplies',
-            description: 'Essential studio supplies',
-            icon: '🧴'
+            title: 'Suministros',
+            description: 'Suministros esenciales para el estudio',
+            Icon: Droplets,
         },
     ]
 
@@ -74,7 +75,7 @@ export default function Home() {
                                 key={category.id}
                                 className={styles.categoryCard}
                             >
-                                <span className={styles.categoryIcon}>{category.icon}</span>
+                                <span className={styles.categoryIcon}><category.Icon size={32} /></span>
                                 <h3 className={styles.categoryTitle}>{category.title}</h3>
                                 <p className={styles.categoryDesc}>{category.description}</p>
                             </Link>
@@ -88,22 +89,22 @@ export default function Home() {
                 <div className={styles.container}>
                     <div className={styles.featureGrid}>
                         <div className={styles.feature}>
-                            <span className={styles.featureIcon}>🏆</span>
+                            <span className={styles.featureIcon}><Trophy size={28} /></span>
                             <h4 className={styles.featureTitle}>Calidad Profesional</h4>
                             <p className={styles.featureText}>Solo marcas premium confiables por profesionales en todo el mundo</p>
                         </div>
                         <div className={styles.feature}>
-                            <span className={styles.featureIcon}>🚚</span>
+                            <span className={styles.featureIcon}><Truck size={28} /></span>
                             <h4 className={styles.featureTitle}>Envío Rápido</h4>
                             <p className={styles.featureText}>Entrega exprés para mantener tu estudio abastecido</p>
                         </div>
                         <div className={styles.feature}>
-                            <span className={styles.featureIcon}>💬</span>
+                            <span className={styles.featureIcon}><MessageCircle size={28} /></span>
                             <h4 className={styles.featureTitle}>Soporte Experto</h4>
                             <p className={styles.featureText}>Soporte dedicado de profesionales de la industria</p>
                         </div>
                         <div className={styles.feature}>
-                            <span className={styles.featureIcon}>🔒</span>
+                            <span className={styles.featureIcon}><ShieldCheck size={28} /></span>
                             <h4 className={styles.featureTitle}>Pedidos Seguros</h4>
                             <p className={styles.featureText}>Pagos protegidos y embalaje discreto</p>
                         </div>

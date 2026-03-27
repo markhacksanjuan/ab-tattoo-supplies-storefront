@@ -1,105 +1,144 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
-import { getVariantPrice } from '@/lib/api/medusa'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import {
+    createCart as createCartApi,
+    getCart as getCartApi,
+    addLineItem,
+    updateLineItem,
+    removeLineItem,
+    updateCart as updateCartApi,
+    getDefaultRegion,
+} from '@/lib/api/medusa'
+import { useAuth } from '@/lib/context/AuthContext'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-    const [items, setItems] = useState([])
+    const [cart, setCart] = useState(null)
     const [loading, setLoading] = useState(true)
+    const { user } = useAuth()
 
+    // Initialize cart on mount
     useEffect(() => {
-        // Load cart from localStorage
-        const savedCart = localStorage.getItem('cart')
-        if (savedCart) {
-            try {
-                setItems(JSON.parse(savedCart))
-            } catch (e) {
-                console.error('Failed to parse cart', e)
-            }
-        }
-        setLoading(false)
+        initializeCart()
     }, [])
 
+    // Associate cart with customer when user logs in (has medusa_customer_id)
     useEffect(() => {
-        // Save cart to localStorage
-        if (!loading) {
-            localStorage.setItem('cart', JSON.stringify(items))
+        if (cart?.id && user?.medusa_customer_id && !cart.customer_id) {
+            updateCartApi(cart.id, { customer_id: user.medusa_customer_id })
+                .then(updatedCart => {
+                    if (updatedCart) setCart(updatedCart)
+                })
         }
-    }, [items, loading])
+    }, [user?.medusa_customer_id, cart?.id])
 
-    const addToCart = (product, variant = null, quantity = 1) => {
-        // Si no se especifica variante, usar la primera disponible
+    const initializeCart = async () => {
+        setLoading(true)
+        try {
+            const savedCartId = localStorage.getItem('cart_id')
+
+            if (savedCartId) {
+                const existingCart = await getCartApi(savedCartId)
+                // Only reuse cart if it hasn't been completed
+                if (existingCart && existingCart.completed_at === null) {
+                    setCart(existingCart)
+                    setLoading(false)
+                    return
+                }
+            }
+
+            // Create new cart with default region (EUR/España)
+            await createNewCart()
+        } catch (error) {
+            console.error('Error initializing cart:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const createNewCart = async () => {
+        const region = await getDefaultRegion()
+        if (!region) {
+            console.error('No regions found in Medusa. Create a region in the Medusa admin panel (Settings → Regions).')
+            return null
+        }
+        const newCart = await createCartApi({
+            region_id: region.id,
+        })
+        if (newCart) {
+            localStorage.setItem('cart_id', newCart.id)
+            setCart(newCart)
+        }
+        return newCart
+    }
+
+    const addToCart = useCallback(async (product, variant = null, quantity = 1) => {
         const selectedVariant = variant || product.variants?.[0]
-        
         if (!selectedVariant) {
             console.error('No variant available for product:', product.id)
             return
         }
 
-        setItems(prev => {
-            // Buscar por variant_id para Medusa v2
-            const existingIndex = prev.findIndex(item => item.variant_id === selectedVariant.id)
-            
-            if (existingIndex >= 0) {
-                const updated = [...prev]
-                updated[existingIndex] = {
-                    ...updated[existingIndex],
-                    quantity: updated[existingIndex].quantity + quantity
-                }
-                return updated
+        let currentCart = cart
+        if (!currentCart?.id) {
+            currentCart = await createNewCart()
+            if (!currentCart) {
+                console.error('Failed to create cart')
+                return
             }
-            
-            // Obtener precio de la variante
-            const price = getVariantPrice(selectedVariant)
-            
-            return [...prev, {
-                id: product.id,
-                variant_id: selectedVariant.id,
-                title: product.title,
-                thumbnail: product.thumbnail,
-                variant_title: selectedVariant.title,
-                variant: selectedVariant,
-                price: price,
-                quantity
-            }]
-        })
-    }
-
-    const removeFromCart = (variantId) => {
-        setItems(prev => prev.filter(item => item.variant_id !== variantId))
-    }
-
-    const updateQuantity = (variantId, quantity) => {
-        if (quantity <= 0) {
-            removeFromCart(variantId)
-            return
         }
-        setItems(prev => prev.map(item =>
-            item.variant_id === variantId ? { ...item, quantity } : item
-        ))
-    }
 
-    const clearCart = () => {
-        setItems([])
-    }
+        const updatedCart = await addLineItem(currentCart.id, selectedVariant.id, quantity)
+        if (updatedCart) {
+            setCart(updatedCart)
+        }
+    }, [cart])
 
+    const removeFromCart = useCallback(async (lineItemId) => {
+        if (!cart?.id) return
+        const updatedCart = await removeLineItem(cart.id, lineItemId)
+        if (updatedCart) {
+            setCart(updatedCart)
+        }
+    }, [cart?.id])
+
+    const updateQuantity = useCallback(async (lineItemId, quantity) => {
+        if (!cart?.id) return
+        if (quantity <= 0) {
+            return removeFromCart(lineItemId)
+        }
+        const updatedCart = await updateLineItem(cart.id, lineItemId, quantity)
+        if (updatedCart) {
+            setCart(updatedCart)
+        }
+    }, [cart?.id, removeFromCart])
+
+    const clearCart = useCallback(async () => {
+        await createNewCart()
+    }, [])
+
+    const refreshCart = useCallback(async () => {
+        if (!cart?.id) return
+        const updated = await getCartApi(cart.id)
+        if (updated) setCart(updated)
+    }, [cart?.id])
+
+    const items = cart?.items || []
     const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
-
-    const cartTotal = items.reduce((sum, item) => {
-        const price = item.price?.amount || 0
-        return sum + (price * item.quantity)
-    }, 0)
+    const cartTotal = cart?.item_total || items.reduce((sum, item) => sum + (item.unit_price || 0) * item.quantity, 0)
 
     return (
         <CartContext.Provider value={{
+            cart,
             items,
             loading,
             addToCart,
             removeFromCart,
             updateQuantity,
             clearCart,
+            refreshCart,
             cartCount,
             cartTotal
         }}>

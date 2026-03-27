@@ -1,0 +1,57 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 980px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+.card {
+  margin-top: 8px;
+}
+
+.loading {
+  padding: 32px;
+  text-align: center;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--primary-color, #0b74de);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.orderItem {
+  border-bottom: 1px solid #eee;
+  padding: 12px 0;
+}
+
+.orderRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status {
+  text-transform: capitalize;
+}

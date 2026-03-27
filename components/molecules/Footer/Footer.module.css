@@ -42,7 +42,7 @@
 /* Links */
 .links {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-xl);
     padding: var(--spacing-xl) 0;
     border-top: 1px solid var(--color-gray-100);
@@ -96,7 +96,14 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+    .links {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 600px) {
     .links {
         grid-template-columns: 1fr;
         gap: var(--spacing-lg);

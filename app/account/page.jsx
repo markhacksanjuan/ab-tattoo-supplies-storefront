@@ -7,6 +7,7 @@ import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import Button from '@/components/atoms/Button/Button'
 import Card from '@/components/atoms/Card/Card'
+import { MapPin, Package, ShoppingCart, ShoppingBag } from 'lucide-react'
 import styles from './page.module.css'
 
 export default function AccountPage() {
@@ -44,33 +45,33 @@ export default function AccountPage() {
 
             <div className={styles.container}>
                 <div className={styles.header}>
-                    <h1 className={styles.title}>My Account</h1>
+                    <h1 className={styles.title}>Mi cuenta</h1>
                     <Button variant="ghost" onClick={handleLogout}>
-                        Sign Out
+                        Cerrar sesión
                     </Button>
                 </div>
 
                 <div className={styles.content}>
                     <Card padding="large" className={styles.card}>
-                        <h2 className={styles.cardTitle}>Studio Information</h2>
+                        <h2 className={styles.cardTitle}>Información del estudio</h2>
                         <div className={styles.info}>
                             <div className={styles.infoRow}>
-                                <span className={styles.label}>Studio Name</span>
+                                <span className={styles.label}>Nombre del estudio</span>
                                 <span className={styles.value}>{user.studio_name}</span>
                             </div>
                             <div className={styles.infoRow}>
-                                <span className={styles.label}>Email</span>
+                                <span className={styles.label}>Correo electrónico</span>
                                 <span className={styles.value}>{user.email}</span>
                             </div>
                             {user.tattoo_license && (
                                 <div className={styles.infoRow}>
-                                    <span className={styles.label}>License</span>
+                                    <span className={styles.label}>Licencia</span>
                                     <span className={styles.value}>{user.tattoo_license}</span>
                                 </div>
                             )}
                             {user.phone && (
                                 <div className={styles.infoRow}>
-                                    <span className={styles.label}>Phone</span>
+                                    <span className={styles.label}>Teléfono</span>
                                     <span className={styles.value}>{user.phone}</span>
                                 </div>
                             )}
@@ -78,25 +79,26 @@ export default function AccountPage() {
                     </Card>
 
                     <Card padding="large" className={styles.card}>
-                        <h2 className={styles.cardTitle}>Account Status</h2>
+                        <h2 className={styles.cardTitle}>Estado de la cuenta</h2>
                         <div className={styles.status}>
                             <span className={`${styles.statusBadge} ${styles[user.status]}`}>
                                 {user.status}
                             </span>
                             <p className={styles.statusText}>
-                                {user.status === 'pending' && 'Your account is pending approval.'}
-                                {user.status === 'approved' && 'Your professional account is active.'}
-                                {user.status === 'active' && 'Your professional account is active.'}
+                                {user.status === 'pending' && 'Tu cuenta está pendiente de aprobación.'}
+                                {user.status === 'approved' && 'Tu cuenta profesional está activa.'}
+                                {user.status === 'active' && 'Tu cuenta profesional está activa.'}
                             </p>
                         </div>
                     </Card>
 
                     <Card padding="large" className={styles.card}>
-                        <h2 className={styles.cardTitle}>Quick Links</h2>
+                        <h2 className={styles.cardTitle}>Enlaces rápidos</h2>
                         <div className={styles.links}>
-                            <a href="/products" className={styles.quickLink}>Browse Products</a>
-                            <a href="/cart" className={styles.quickLink}>View Cart</a>
-                            <a href="/account/orders" className={styles.quickLink}>Order History</a>
+                            <a href="/account/addresses" className={styles.quickLink}><MapPin size={18} /> Mis direcciones</a>
+                            <a href="/account/orders" className={styles.quickLink}><Package size={18} /> Historial de pedidos</a>
+                            <a href="/products" className={styles.quickLink}><ShoppingCart size={18} /> Explorar productos</a>
+                            <a href="/cart" className={styles.quickLink}><ShoppingBag size={18} /> Ver carrito</a>
                         </div>
                     </Card>
                 </div>

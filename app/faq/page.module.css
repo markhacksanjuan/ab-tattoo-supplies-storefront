@@ -1,0 +1,139 @@
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    padding-top: calc(var(--header-height) + var(--spacing-xxl));
+    width: 100%;
+}
+
+.header {
+    margin-bottom: var(--spacing-xxl);
+}
+
+.header h1 {
+    margin-bottom: var(--spacing-md);
+}
+
+/* Categories */
+.categories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xxl);
+}
+
+.category h3 {
+    color: var(--color-gold);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Questions */
+.questions {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.questionItem {
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.questionItem:last-child {
+    border-bottom: none;
+}
+
+.questionButton {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color var(--transition-normal);
+}
+
+.questionButton:hover {
+    background-color: var(--color-bg-elevated);
+}
+
+.questionText {
+    color: var(--color-white);
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.questionIcon {
+    color: var(--color-gold);
+    font-size: 20px;
+    font-weight: 300;
+    min-width: 24px;
+    text-align: center;
+    transition: transform var(--transition-normal);
+}
+
+.open .questionButton {
+    background-color: var(--color-bg-elevated);
+}
+
+/* Answer */
+.answer {
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Contact CTA */
+.contactCta {
+    margin-top: var(--spacing-xxxl);
+    padding: var(--spacing-xxl);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.contactCta h4 {
+    color: var(--color-white);
+}
+
+.ctaLink {
+    color: var(--color-gold);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-body);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    transition: color var(--transition-normal);
+    margin-top: var(--spacing-sm);
+}
+
+.ctaLink:hover {
+    color: var(--color-gold-light);
+}

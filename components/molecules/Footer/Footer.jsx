@@ -12,42 +12,48 @@ export default function Footer() {
                         <span className={styles.logoAccent}>TATTOO</span>
                     </Link>
                     <p className={styles.tagline}>
-                        Professional Tattoo Supplies
+                        Tattoo supplies para profesionales.
                     </p>
                 </div>
 
                 {/* Links */}
                 <div className={styles.links}>
                     <div className={styles.column}>
-                        <h4 className={styles.columnTitle}>Products</h4>
-                        <Link href="/products?category=inks" className={styles.link}>Inks</Link>
-                        <Link href="/products?category=needles" className={styles.link}>Needles</Link>
-                        <Link href="/products?category=machines" className={styles.link}>Machines</Link>
-                        <Link href="/products?category=supplies" className={styles.link}>Supplies</Link>
+                        <h4 className={styles.columnTitle}>Productos</h4>
+                        <Link href="/products?category=inks" className={styles.link}>Tintas</Link>
+                        <Link href="/products?category=needles" className={styles.link}>Agujas</Link>
+                        <Link href="/products?category=machines" className={styles.link}>Máquinas</Link>
+                        <Link href="/products?category=supplies" className={styles.link}>Suministros</Link>
                     </div>
                     <div className={styles.column}>
-                        <h4 className={styles.columnTitle}>Account</h4>
-                        <Link href="/login" className={styles.link}>Login</Link>
-                        <Link href="/register" className={styles.link}>Register</Link>
-                        <Link href="/account" className={styles.link}>My Account</Link>
-                        <Link href="/account/orders" className={styles.link}>Orders</Link>
+                        <h4 className={styles.columnTitle}>Cuenta</h4>
+                        <Link href="/login" className={styles.link}>Iniciar sesión</Link>
+                        <Link href="/register" className={styles.link}>Registrarse</Link>
+                        <Link href="/account" className={styles.link}>Mi Cuenta</Link>
+                        <Link href="/account/orders" className={styles.link}>Pedidos</Link>
                     </div>
                     <div className={styles.column}>
-                        <h4 className={styles.columnTitle}>Support</h4>
-                        <Link href="/contact" className={styles.link}>Contact</Link>
-                        <Link href="/shipping" className={styles.link}>Shipping</Link>
-                        <Link href="/returns" className={styles.link}>Returns</Link>
-                        <Link href="/faq" className={styles.link}>FAQ</Link>
+                        <h4 className={styles.columnTitle}>Soporte</h4>
+                        <Link href="/contact" className={styles.link}>Contacto</Link>
+                        <Link href="/shipping" className={styles.link}>Envío</Link>
+                        <Link href="/returns" className={styles.link}>Devoluciones</Link>
+                        <Link href="/faq" className={styles.link}>Preguntas Frecuentes</Link>
+                    </div>
+                    <div className={styles.column}>
+                        <h4 className={styles.columnTitle}>Legal</h4>
+                        <Link href="/legal#aviso-legal" className={styles.link}>Aviso Legal</Link>
+                        <Link href="/legal#privacidad" className={styles.link}>Privacidad</Link>
+                        <Link href="/legal#cookies" className={styles.link}>Cookies</Link>
                     </div>
                 </div>
 
                 {/* Bottom */}
                 <div className={styles.bottom}>
                     <p className={styles.copyright}>
-                        © {new Date().getFullYear()} AB Tattoo Supplies. All rights reserved.
+                        © {new Date().getFullYear()} AB Tattoo Supplies. Todos los derechos reservados.
                     </p>
                     <p className={styles.pro}>
-                        For Professional Use Only
+                        Solo para uso profesional
                     </p>
                 </div>
             </div>

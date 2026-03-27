@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext } from 'react'
-import axios from 'axios'
+import userApi, { registerUser, loginUser, getCurrentUser, updateUserProfile } from '@/lib/api/user'
 
 const AuthContext = createContext(null)
 
@@ -18,7 +18,6 @@ export function AuthProvider({ children }) {
     }, [])
 
     const loadGoogleScript = () => {
-        // Load Google Sign-In script
         if (typeof window !== 'undefined' && !window.google) {
             const script = document.createElement('script')
             script.src = 'https://accounts.google.com/gsi/client'
@@ -36,10 +35,8 @@ export function AuthProvider({ children }) {
         }
 
         try {
-            const response = await axios.get(`${USER_API_URL}/api/users/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            setUser(response.data)
+            const userData = await getCurrentUser()
+            setUser(userData)
         } catch (err) {
             localStorage.removeItem('auth_token')
         } finally {
@@ -50,11 +47,8 @@ export function AuthProvider({ children }) {
     const login = async (email, password) => {
         setError(null)
         try {
-            const response = await axios.post(`${USER_API_URL}/api/users/login`, {
-                email,
-                password
-            })
-            const { access_token, user: userData } = response.data
+            const data = await loginUser(email, password)
+            const { access_token, user: userData } = data
             localStorage.setItem('auth_token', access_token)
             setUser(userData)
             return userData
@@ -68,7 +62,7 @@ export function AuthProvider({ children }) {
     const loginWithGoogle = async (googleToken) => {
         setError(null)
         try {
-            const response = await axios.post(`${USER_API_URL}/api/auth/google`, {
+            const response = await userApi.post('/api/auth/google', {
                 token: googleToken
             })
             const { access_token, user: userData } = response.data
@@ -85,8 +79,8 @@ export function AuthProvider({ children }) {
     const register = async (userData) => {
         setError(null)
         try {
-            const response = await axios.post(`${USER_API_URL}/api/users/register`, userData)
-            const { access_token, user: newUser } = response.data
+            const data = await registerUser(userData)
+            const { access_token, user: newUser } = data
             localStorage.setItem('auth_token', access_token)
             setUser(newUser)
             return newUser
@@ -103,13 +97,10 @@ export function AuthProvider({ children }) {
     }
 
     const updateProfile = async (updates) => {
-        const token = localStorage.getItem('auth_token')
         try {
-            const response = await axios.put(`${USER_API_URL}/api/users/me`, updates, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            setUser(response.data)
-            return response.data
+            const updatedUser = await updateUserProfile(updates)
+            setUser(updatedUser)
+            return updatedUser
         } catch (err) {
             const message = err.response?.data?.detail || 'Update failed'
             setError(message)

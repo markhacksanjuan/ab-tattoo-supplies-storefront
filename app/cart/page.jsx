@@ -9,7 +9,8 @@ import Button from '@/components/atoms/Button/Button'
 import styles from './page.module.css'
 
 export default function CartPage() {
-    const { items, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart()
+    const { cart, items, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart()
+    const currencyCode = cart?.currency_code || 'EUR'
 
     return (
         <main className={styles.main}>
@@ -22,7 +23,7 @@ export default function CartPage() {
                     <div className={styles.content}>
                         <div className={styles.items}>
                             {items.map((item) => (
-                                <div key={item.variant_id} className={styles.item}>
+                                <div key={item.id} className={styles.item}>
                                     <div className={styles.itemImage}>
                                         {item.thumbnail ? (
                                             <img src={item.thumbnail} alt={item.title} />
@@ -38,31 +39,31 @@ export default function CartPage() {
                                     </div>
                                     <div className={styles.itemInfo}>
                                         <h3 className={styles.itemTitle}>{item.title}</h3>
-                                        {item.variant_title && (
-                                            <p className={styles.itemVariant}>{item.variant_title}</p>
+                                        {(item.subtitle || item.variant_title) && (
+                                            <p className={styles.itemVariant}>{item.subtitle || item.variant_title}</p>
                                         )}
                                         <p className={styles.itemPrice}>
-                                            {item.price && formatPrice(item.price.amount, item.price.currency_code || 'EUR')}
+                                            {formatPrice(item.unit_price, currencyCode)}
                                         </p>
                                     </div>
                                     <div className={styles.itemQuantity}>
                                         <button
                                             className={styles.quantityBtn}
-                                            onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                         >
                                             -
                                         </button>
                                         <span className={styles.quantityValue}>{item.quantity}</span>
                                         <button
                                             className={styles.quantityBtn}
-                                            onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                         >
                                             +
                                         </button>
                                     </div>
                                     <button
                                         className={styles.removeBtn}
-                                        onClick={() => removeFromCart(item.variant_id)}
+                                        onClick={() => removeFromCart(item.id)}
                                     >
                                         ×
                                     </button>
@@ -73,7 +74,7 @@ export default function CartPage() {
                         <div className={styles.summary}>
                             <div className={styles.summaryRow}>
                                 <span>Subtotal</span>
-                                <span>{formatPrice(cartTotal)}</span>
+                                <span>{formatPrice(cartTotal, currencyCode)}</span>
                             </div>
                             <div className={styles.summaryRow}>
                                 <span>Envío</span>
@@ -81,7 +82,7 @@ export default function CartPage() {
                             </div>
                             <div className={`${styles.summaryRow} ${styles.total}`}>
                                 <span>Total</span>
-                                <span>{formatPrice(cartTotal)}</span>
+                                <span>{formatPrice(cartTotal, currencyCode)}</span>
                             </div>
                             <Link href="/checkout">
                                 <Button variant="primary" size="large" fullWidth>
