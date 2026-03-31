@@ -4,59 +4,65 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useCart } from '@/lib/context/CartContext'
+import { getCategories } from '@/lib/api/medusa'
 import styles from './Header.module.css'
-
-// Estructura de navegación estática basada en la jerarquía de productos
-// Types (navbar) → Categories (dropdown)
-const NAV_ITEMS = [
-    {
-        label: 'Agujas',
-        href: '/products?type=agujas',
-        subcategories: [
-            { label: 'Todas las Agujas', href: '/products?type=agujas' },
-            { label: 'Round Liner (RL)', href: '/products?category=round-liner' },
-            { label: 'Round Shader (RS)', href: '/products?category=round-shader' },
-            { label: 'Magnum (M1)', href: '/products?category=magnum' },
-            { label: 'Curved Magnum (CM)', href: '/products?category=curved-magnum' },
-            { label: 'Long Taper', href: '/products?category=long-taper' },
-        ],
-    },
-    {
-        label: 'Tintas',
-        href: '/products?type=tintas',
-        subcategories: [
-            { label: 'Todas las Tintas', href: '/products?type=tintas' },
-            { label: 'Tintas Color', href: '/products?category=tintas-color' },
-            { label: 'Negro y Grises', href: '/products?category=tintas-negro' },
-            { label: 'Blancos', href: '/products?category=tintas-blanco' },
-            { label: 'Sets de Tintas', href: '/products?category=sets-tintas' },
-        ],
-    },
-    {
-        label: 'Material',
-        href: '/products?type=material',
-        subcategories: [
-            { label: 'Todo el Material', href: '/products?type=material' },
-            { label: 'Desechables', href: '/products?category=desechables' },
-            { label: 'Jabones', href: '/products?category=jabones' },
-            { label: 'Cremas', href: '/products?category=cremas' },
-            { label: 'Vaselinas', href: '/products?category=vaselinas' },
-            { label: 'Stencil', href: '/products?category=stencil' },
-            { label: 'Desinfectantes', href: '/products?category=desinfectantes' },
-            { label: 'Cups', href: '/products?category=cups' },
-            { label: 'Accesorios', href: '/products?category=accesorios-tatuaje' },
-            { label: 'Curación', href: '/products?category=curacion' },
-        ],
-    },
-]
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [activeDropdown, setActiveDropdown] = useState(null)
+    const [navItems, setNavItems] = useState([])
+    const [mobileOpenSections, setMobileOpenSections] = useState({})
     const { user, logout } = useAuth()
     const { cartCount } = useCart()
     const dropdownTimeout = useRef(null)
+
+    // Fetch categories from Medusa and build nav structure
+    useEffect(() => {
+        let cancelled = false
+
+        async function loadNavigation() {
+            try {
+                const categories = await getCategories()
+                if (cancelled) return
+
+                // Parent categories (no parent) become main nav items
+                // Their children become dropdown sub-items
+                const parentCategories = categories.filter(
+                    cat => !cat.parent_category_id && !cat.parent_category
+                )
+
+                const items = parentCategories.map(parent => {
+                    const children = parent.category_children || []
+
+                    // Build subcategories: first item = "All" link, then children
+                    const subcategories = [
+                        {
+                            label: `Tod${getArticle(parent.name)} ${parent.name}`,
+                            href: `/products?category=${parent.handle}`,
+                        },
+                        ...children.map(child => ({
+                            label: child.name,
+                            href: `/products?category=${child.handle}`,
+                        })),
+                    ]
+
+                    return {
+                        label: parent.name,
+                        href: `/products?category=${parent.handle}`,
+                        subcategories: subcategories.length > 1 ? subcategories : null,
+                    }
+                })
+
+                setNavItems(items)
+            } catch (error) {
+                console.error('Error loading navigation categories:', error)
+            }
+        }
+
+        loadNavigation()
+        return () => { cancelled = true }
+    }, [])
 
     useEffect(() => {
         const handleScroll = () => {
@@ -83,6 +89,14 @@ export default function Header() {
     const closeAll = () => {
         setActiveDropdown(null)
         setMobileMenuOpen(false)
+        setMobileOpenSections({})
+    }
+
+    const toggleMobileSection = (index) => {
+        setMobileOpenSections(prev => ({
+            ...prev,
+            [index]: !prev[index],
+        }))
     }
 
     return (
@@ -100,7 +114,7 @@ export default function Header() {
                         Todos
                     </Link>
 
-                    {NAV_ITEMS.map((item, index) => (
+                    {navItems.map((item, index) => (
                         <div
                             key={item.label}
                             className={styles.navDropdown}
@@ -109,13 +123,35 @@ export default function Header() {
                         >
                             <Link href={item.href} className={styles.navLink} onClick={closeAll}>
                                 {item.label}
-                                <svg className={styles.chevron} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <polyline points="6 9 12 15 18 9" />
-                                </svg>
+                                {item.subcategories && (
+                                    <svg
+                                        className={styles.chevron}
+                                        width="10"
+                                        height="10"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        onClick={(e) => {
+                                            // On mobile, toggle section instead of navigating
+                                            if (window.innerWidth <= 768) {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                toggleMobileSection(index)
+                                            }
+                                        }}
+                                    >
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                )}
                             </Link>
 
                             {item.subcategories && (
-                                <div className={`${styles.dropdown} ${activeDropdown === index ? styles.dropdownOpen : ''}`}>
+                                <div className={`${styles.dropdown} ${
+                                    activeDropdown === index || mobileOpenSections[index]
+                                        ? styles.dropdownOpen
+                                        : ''
+                                }`}>
                                     {item.subcategories.map((sub) => (
                                         <Link
                                             key={sub.href}
@@ -172,4 +208,14 @@ export default function Header() {
             </div>
         </header>
     )
+}
+
+/**
+ * Helper: returns the correct Spanish article suffix for "Todos/Todas las X"
+ * Simple heuristic: words ending in 'a' or 'as' use feminine
+ */
+function getArticle(name) {
+    const lower = name.toLowerCase().trim()
+    if (lower.endsWith('as') || lower.endsWith('a')) return 'as las'
+    return 'os los'
 }

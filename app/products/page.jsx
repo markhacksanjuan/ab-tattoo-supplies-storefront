@@ -129,7 +129,7 @@ function ProductsContent() {
                     <div className={styles.empty}>
                         <p className={styles.emptyText}>No se encontraron productos</p>
                         <p className={styles.emptyHint}>
-                            {collectionHandle || categoryHandle || typeId
+                            {collectionHandle || categoryHandle || typeParam
                                 ? 'Intenta seleccionar un filtro diferente o vuelve a intentarlo más tarde.'
                                 : 'Los productos aparecerán aquí una vez que se agreguen a la tienda.'
                             }
