@@ -1,38 +1,12 @@
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
+import HomeCategoryGrid from '@/components/molecules/HomeCategoryGrid/HomeCategoryGrid'
 import Button from '@/components/atoms/Button/Button'
 import Link from 'next/link'
-import { Palette, Syringe, Droplets, Trophy, Truck, MessageCircle, ShieldCheck } from 'lucide-react'
+import { Trophy, Truck, MessageCircle, ShieldCheck } from 'lucide-react'
 import styles from './page.module.css'
 
 export default function Home() {
-    const categories = [
-        {
-            id: 'inks',
-            title: 'Tintas',
-            description: 'Tintas de tatuaje premium de las mejores marcas',
-            Icon: Palette,
-        },
-        {
-            id: 'needles',
-            title: 'Agujas',
-            description: 'Agujas de precisión para cada estilo',
-            Icon: Syringe,
-        },
-        // {
-        //     id: 'machines',
-        //     title: 'Máquinas',
-        //     description: 'Máquinas de tatuaje profesionales',
-        //     Icon: Zap,
-        // },
-        {
-            id: 'supplies',
-            title: 'Suministros',
-            description: 'Suministros esenciales para el estudio',
-            Icon: Droplets,
-        },
-    ]
-
     return (
         <main className={styles.main}>
             <Header />
@@ -65,24 +39,7 @@ export default function Home() {
             </section>
 
             {/* Categories */}
-            <section className={styles.categories}>
-                <div className={styles.container}>
-                    <h2 className={styles.sectionTitle}>Comprar por categoría</h2>
-                    <div className={styles.categoryGrid}>
-                        {categories.map((category) => (
-                            <Link
-                                href={`/products?category=${category.id}`}
-                                key={category.id}
-                                className={styles.categoryCard}
-                            >
-                                <span className={styles.categoryIcon}><category.Icon size={32} /></span>
-                                <h3 className={styles.categoryTitle}>{category.title}</h3>
-                                <p className={styles.categoryDesc}>{category.description}</p>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            <HomeCategoryGrid />
 
             {/* Features */}
             <section className={styles.features}>
