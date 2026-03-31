@@ -6,8 +6,15 @@ import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import ProductCard from '@/components/molecules/ProductCard/ProductCard'
 import ProductFilters from '@/components/molecules/ProductFilters/ProductFilters'
-import { getProducts, getCollection, getCategory } from '@/lib/api/medusa'
+import { getProducts, getCollection, getCategory, getProductTypes } from '@/lib/api/medusa'
 import styles from './page.module.css'
+
+// Map type handles (used in URL) to display names
+const TYPE_LABELS = {
+    agujas: 'Agujas',
+    tintas: 'Tintas',
+    material: 'Material',
+}
 
 function ProductsContent() {
     const searchParams = useSearchParams()
@@ -15,7 +22,7 @@ function ProductsContent() {
     // Get filter values from URL
     const collectionHandle = searchParams.get('collection') || ''
     const categoryHandle = searchParams.get('category') || ''
-    const typeId = searchParams.get('type') || ''
+    const typeParam = searchParams.get('type') || ''
 
     const [products, setProducts] = useState([])
     const [loading, setLoading] = useState(true)
@@ -52,9 +59,21 @@ function ProductsContent() {
                 } else {
                     setPageTitle('Categoría no encontrada')
                 }
-            } else if (typeId) {
-                params.type_id = [typeId]
-                setPageTitle('Productos por Tipo')
+            } else if (typeParam) {
+                // typeParam can be a handle (e.g. "agujas") or an actual type ID
+                // First try to find the type by matching the value
+                const allTypes = await getProductTypes()
+                const matchedType = allTypes.find(
+                    t => t.value?.toLowerCase() === typeParam.toLowerCase()
+                )
+                if (matchedType) {
+                    params.type_id = [matchedType.id]
+                    setPageTitle(matchedType.value)
+                } else {
+                    // Fallback: try using it as a direct type ID
+                    params.type_id = [typeParam]
+                    setPageTitle(TYPE_LABELS[typeParam] || 'Productos por Tipo')
+                }
             } else {
                 setPageTitle('Todos los Productos')
             }
@@ -68,7 +87,7 @@ function ProductsContent() {
         } finally {
             setLoading(false)
         }
-    }, [collectionHandle, categoryHandle, typeId])
+    }, [collectionHandle, categoryHandle, typeParam])
 
     useEffect(() => {
         loadProducts()

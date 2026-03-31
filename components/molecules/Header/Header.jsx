@@ -1,16 +1,62 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useCart } from '@/lib/context/CartContext'
 import styles from './Header.module.css'
 
+// Estructura de navegación estática basada en la jerarquía de productos
+// Types (navbar) → Categories (dropdown)
+const NAV_ITEMS = [
+    {
+        label: 'Agujas',
+        href: '/products?type=agujas',
+        subcategories: [
+            { label: 'Todas las Agujas', href: '/products?type=agujas' },
+            { label: 'Round Liner (RL)', href: '/products?category=round-liner' },
+            { label: 'Round Shader (RS)', href: '/products?category=round-shader' },
+            { label: 'Magnum (M1)', href: '/products?category=magnum' },
+            { label: 'Curved Magnum (CM)', href: '/products?category=curved-magnum' },
+            { label: 'Long Taper', href: '/products?category=long-taper' },
+        ],
+    },
+    {
+        label: 'Tintas',
+        href: '/products?type=tintas',
+        subcategories: [
+            { label: 'Todas las Tintas', href: '/products?type=tintas' },
+            { label: 'Tintas Color', href: '/products?category=tintas-color' },
+            { label: 'Negro y Grises', href: '/products?category=tintas-negro' },
+            { label: 'Blancos', href: '/products?category=tintas-blanco' },
+            { label: 'Sets de Tintas', href: '/products?category=sets-tintas' },
+        ],
+    },
+    {
+        label: 'Material',
+        href: '/products?type=material',
+        subcategories: [
+            { label: 'Todo el Material', href: '/products?type=material' },
+            { label: 'Desechables', href: '/products?category=desechables' },
+            { label: 'Jabones', href: '/products?category=jabones' },
+            { label: 'Cremas', href: '/products?category=cremas' },
+            { label: 'Vaselinas', href: '/products?category=vaselinas' },
+            { label: 'Stencil', href: '/products?category=stencil' },
+            { label: 'Desinfectantes', href: '/products?category=desinfectantes' },
+            { label: 'Cups', href: '/products?category=cups' },
+            { label: 'Accesorios', href: '/products?category=accesorios-tatuaje' },
+            { label: 'Curación', href: '/products?category=curacion' },
+        ],
+    },
+]
+
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
+    const [activeDropdown, setActiveDropdown] = useState(null)
     const { user, logout } = useAuth()
     const { cartCount } = useCart()
+    const dropdownTimeout = useRef(null)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -18,10 +64,26 @@ export default function Header() {
         }
 
         window.addEventListener('scroll', handleScroll)
-        handleScroll() // Check initial scroll position
+        handleScroll()
 
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
+
+    const handleMouseEnter = (index) => {
+        clearTimeout(dropdownTimeout.current)
+        setActiveDropdown(index)
+    }
+
+    const handleMouseLeave = () => {
+        dropdownTimeout.current = setTimeout(() => {
+            setActiveDropdown(null)
+        }, 150)
+    }
+
+    const closeAll = () => {
+        setActiveDropdown(null)
+        setMobileMenuOpen(false)
+    }
 
     return (
         <header className={`${styles.header} ${isScrolled ? styles.headerScrolled : ''}`}>
@@ -34,15 +96,40 @@ export default function Header() {
 
                 {/* Navigation */}
                 <nav className={`${styles.nav} ${mobileMenuOpen ? styles.navOpen : ''}`}>
-                    <Link href="/products" className={styles.navLink}>
-                        Productos
+                    <Link href="/products" className={styles.navLink} onClick={closeAll}>
+                        Todos
                     </Link>
-                    <Link href="/products?category=tintas" className={styles.navLink}>
-                        Tintas
-                    </Link>
-                    <Link href="/products?category=needles" className={styles.navLink}>
-                        Agujas
-                    </Link>
+
+                    {NAV_ITEMS.map((item, index) => (
+                        <div
+                            key={item.label}
+                            className={styles.navDropdown}
+                            onMouseEnter={() => handleMouseEnter(index)}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <Link href={item.href} className={styles.navLink} onClick={closeAll}>
+                                {item.label}
+                                <svg className={styles.chevron} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </Link>
+
+                            {item.subcategories && (
+                                <div className={`${styles.dropdown} ${activeDropdown === index ? styles.dropdownOpen : ''}`}>
+                                    {item.subcategories.map((sub) => (
+                                        <Link
+                                            key={sub.href}
+                                            href={sub.href}
+                                            className={styles.dropdownItem}
+                                            onClick={closeAll}
+                                        >
+                                            {sub.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </nav>
 
                 {/* Actions */}
