@@ -350,8 +350,13 @@ export default function CheckoutPage() {
             // 5. Initialize Stripe payment session
             //    Creates payment collection if needed, then creates payment session
             const paymentSession = await initializePaymentSession(cart.id)
-            if (paymentSession?.data?.client_secret) {
-                setClientSecret(paymentSession.data.client_secret)
+            console.log('[Checkout] paymentSession result:', JSON.stringify(paymentSession, null, 2))
+
+            const secret = paymentSession?.data?.client_secret
+            console.log('[Checkout] client_secret:', secret ? 'found' : 'NOT FOUND')
+
+            if (secret) {
+                setClientSecret(secret)
             }
 
             await refreshCart()
