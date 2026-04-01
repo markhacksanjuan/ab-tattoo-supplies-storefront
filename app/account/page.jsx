@@ -46,7 +46,7 @@ export default function AccountPage() {
             <div className={styles.container}>
                 <div className={styles.header}>
                     <h1 className={styles.title}>Mi cuenta</h1>
-                    <Button variant="ghost" onClick={handleLogout}>
+                    <Button variant="ghost" onClick={handleLogout} className={styles.headerLogout}>
                         Cerrar sesión
                     </Button>
                 </div>
@@ -79,20 +79,6 @@ export default function AccountPage() {
                     </Card>
 
                     <Card padding="large" className={styles.card}>
-                        <h2 className={styles.cardTitle}>Estado de la cuenta</h2>
-                        <div className={styles.status}>
-                            <span className={`${styles.statusBadge} ${styles[user.status]}`}>
-                                {user.status}
-                            </span>
-                            <p className={styles.statusText}>
-                                {user.status === 'pending' && 'Tu cuenta está pendiente de aprobación.'}
-                                {user.status === 'approved' && 'Tu cuenta profesional está activa.'}
-                                {user.status === 'active' && 'Tu cuenta profesional está activa.'}
-                            </p>
-                        </div>
-                    </Card>
-
-                    <Card padding="large" className={styles.card}>
                         <h2 className={styles.cardTitle}>Enlaces rápidos</h2>
                         <div className={styles.links}>
                             <a href="/account/addresses" className={styles.quickLink}><MapPin size={18} /> Mis direcciones</a>
@@ -101,6 +87,12 @@ export default function AccountPage() {
                             <a href="/cart" className={styles.quickLink}><ShoppingBag size={18} /> Ver carrito</a>
                         </div>
                     </Card>
+                </div>
+
+                <div className={styles.logoutBottom}>
+                    <Button variant="ghost" onClick={handleLogout} fullWidth>
+                        Cerrar sesión
+                    </Button>
                 </div>
             </div>
 

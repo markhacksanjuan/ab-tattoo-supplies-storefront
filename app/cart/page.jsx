@@ -84,16 +84,18 @@ export default function CartPage() {
                                 <span>Total</span>
                                 <span>{formatPrice(cartTotal, currencyCode)}</span>
                             </div>
-                            <Link href="/checkout">
-                                <Button variant="primary" size="large" fullWidth>
-                                    Proceder al Pago
-                                </Button>
-                            </Link>
-                            <Link href="/products">
-                                <Button variant="outline" size="large" fullWidth>
-                                    Seguir Comprando
-                                </Button>
-                            </Link>
+                            <div className={styles.checkoutActions}>
+                                <Link href="/checkout">
+                                    <Button variant="primary" size="large" fullWidth>
+                                        Proceder al Pago
+                                    </Button>
+                                </Link>
+                                <Link href="/products">
+                                    <Button variant="outline" size="large" fullWidth>
+                                        Seguir Comprando
+                                    </Button>
+                                </Link>
+                            </div>
                             <button className={styles.clearBtn} onClick={clearCart}>
                                 Vaciar Carrito
                             </button>

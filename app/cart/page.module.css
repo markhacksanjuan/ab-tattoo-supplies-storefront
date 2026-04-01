@@ -185,6 +185,12 @@
     margin-bottom: var(--spacing-xl);
 }
 
+.checkoutActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .content {

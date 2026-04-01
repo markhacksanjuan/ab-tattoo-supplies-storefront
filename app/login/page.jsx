@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/context/AuthContext'
@@ -13,13 +13,19 @@ import styles from './page.module.css'
 
 export default function LoginPage() {
     const router = useRouter()
-    const { login, error } = useAuth()
+    const { login, user, error } = useAuth()
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     })
     const [loading, setLoading] = useState(false)
     const [formError, setFormError] = useState('')
+
+    useEffect(() => {
+        if (user) {
+            router.push('/account')
+        }
+    }, [user, router])
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -34,7 +40,6 @@ export default function LoginPage() {
 
         try {
             await login(formData.email, formData.password)
-            router.push('/account')
         } catch (err) {
             setFormError(err.message)
         } finally {
@@ -43,7 +48,7 @@ export default function LoginPage() {
     }
 
     const handleGoogleSuccess = () => {
-        router.push('/account')
+        // Redirect handled by useEffect watching user state
     }
 
     const handleGoogleError = (message) => {
