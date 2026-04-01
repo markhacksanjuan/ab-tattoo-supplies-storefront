@@ -10,6 +10,16 @@
     top: calc(var(--header-height) + var(--spacing-xl));
 }
 
+/* ── Mobile toggle button (hidden on desktop) ── */
+.mobileToggle {
+    display: none;
+}
+
+/* ── Filter body (always visible on desktop) ── */
+.filterBody {
+    display: block;
+}
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -131,12 +141,94 @@
     opacity: 0.7;
 }
 
-/* Mobile styles */
+/* ── Mobile styles ── */
 @media (max-width: 1024px) {
     .filters {
         position: static;
         max-width: 100%;
+        min-width: unset;
         margin-bottom: var(--spacing-lg);
+        padding: 0;
+        background: none;
+        border: none;
+    }
+
+    /* Show the toggle button */
+    .mobileToggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background-color: var(--color-bg-secondary);
+        border: 1px solid var(--color-gray-100);
+        border-radius: var(--radius-md);
+        color: var(--color-white);
+        font-size: var(--font-size-body);
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .mobileToggle:hover {
+        background-color: var(--color-bg-tertiary);
+    }
+
+    .mobileToggleLabel {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .filterIcon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        background-color: var(--color-gold);
+        color: var(--color-bg-primary);
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 10px;
+        line-height: 1;
+    }
+
+    .chevron {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        transition: transform 0.25s ease;
+    }
+
+    .chevronOpen {
+        transform: rotate(180deg);
+    }
+
+    /* Collapsible body */
+    .filterBody {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s ease;
+    }
+
+    .filterBodyInner {
+        overflow: hidden;
+    }
+
+    .filterBodyOpen {
+        grid-template-rows: 1fr;
+    }
+
+    .header {
+        padding-top: var(--spacing-md);
     }
 
     .filterList {

@@ -20,6 +20,7 @@ export default function ProductFilters({ onFiltersChange }) {
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [filtersError, setFiltersError] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
     const enrichedRef = useRef(false)
     
     // Get current filter values from URL
@@ -106,6 +107,8 @@ export default function ProductFilters({ onFiltersChange }) {
         ? collections.filter(col => allowedBrandHandles.includes(col.handle))
         : collections
 
+    const activeFilterCount = [currentType, currentCategory, currentCollection].filter(Boolean).length
+
     if (loading) {
         return (
             <aside className={styles.filters}>
@@ -120,6 +123,38 @@ export default function ProductFilters({ onFiltersChange }) {
 
     return (
         <aside className={styles.filters}>
+            {/* Mobile toggle button */}
+            <button
+                className={styles.mobileToggle}
+                onClick={() => setMobileOpen(prev => !prev)}
+                aria-expanded={mobileOpen}
+            >
+                <span className={styles.mobileToggleLabel}>
+                    <svg className={styles.filterIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="4" y1="6" x2="20" y2="6" />
+                        <line x1="8" y1="12" x2="20" y2="12" />
+                        <line x1="12" y1="18" x2="20" y2="18" />
+                    </svg>
+                    Filtros
+                    {activeFilterCount > 0 && (
+                        <span className={styles.badge}>{activeFilterCount}</span>
+                    )}
+                </span>
+                <svg
+                    className={`${styles.chevron} ${mobileOpen ? styles.chevronOpen : ''}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+
+            <div className={`${styles.filterBody} ${mobileOpen ? styles.filterBodyOpen : ''}`}>
+            <div className={styles.filterBodyInner}>
             <div className={styles.header}>
                 <h3 className={styles.title}>Filtros</h3>
                 {hasActiveFilters && (
@@ -214,6 +249,8 @@ export default function ProductFilters({ onFiltersChange }) {
                     </ul>
                 </div>
             )}
+            </div>{/* end filterBodyInner */}
+            </div>{/* end filterBody */}
         </aside>
     )
 }
