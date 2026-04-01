@@ -20,6 +20,7 @@ export default function ProductDetailPage() {
     const [error, setError] = useState(null)
     const [selectedOptions, setSelectedOptions] = useState({})
     const [selectedVariant, setSelectedVariant] = useState(null)
+    const [selectedImage, setSelectedImage] = useState(null)
 
     useEffect(() => {
         loadProduct()
@@ -40,6 +41,14 @@ export default function ProductDetailPage() {
         })
 
         setSelectedVariant(matchingVariant || null)
+
+        // Si la variante tiene imagen propia, cambiar a ella automáticamente
+        if (matchingVariant) {
+            const varImg = matchingVariant.metadata?.image || matchingVariant.thumbnail
+            if (varImg) {
+                setSelectedImage(varImg)
+            }
+        }
     }, [selectedOptions, product])
 
     const loadProduct = async () => {
@@ -50,6 +59,9 @@ export default function ProductDetailPage() {
             const fetchedProduct = await getProduct(params.id)
             if (fetchedProduct) {
                 setProduct(fetchedProduct)
+                
+                // Inicializar imagen seleccionada
+                setSelectedImage(fetchedProduct.thumbnail || fetchedProduct.images?.[0]?.url || null)
                 
                 // Inicializar opciones seleccionadas con la primera variante
                 if (fetchedProduct.options && fetchedProduct.variants?.[0]) {
@@ -149,6 +161,45 @@ export default function ProductDetailPage() {
     const inventory = selectedVariant?.inventory_quantity ?? product.variants?.[0]?.inventory_quantity ?? 0
     const manageInventory = selectedVariant?.manage_inventory ?? true
 
+    // Construir lista completa de imágenes (thumbnail + product.images + variant images)
+    const allImages = (() => {
+        const urls = new Set()
+        const images = []
+        // 1. Thumbnail primero
+        if (product.thumbnail) {
+            urls.add(product.thumbnail)
+            images.push({ url: product.thumbnail, label: product.title })
+        }
+        // 2. Imágenes del producto
+        if (product.images?.length) {
+            product.images.forEach((img, i) => {
+                const url = img.url || img
+                if (url && !urls.has(url)) {
+                    urls.add(url)
+                    images.push({ url, label: `${product.title} - ${i + 1}` })
+                }
+            })
+        }
+        // 3. Imágenes propias de cada variante
+        if (product.variants?.length) {
+            product.variants.forEach(variant => {
+                const variantImg = variant.metadata?.image || variant.thumbnail
+                if (variantImg && !urls.has(variantImg)) {
+                    urls.add(variantImg)
+                    const variantLabel = variant.title || variant.options?.map(o => o.value).join(' / ') || 'Variante'
+                    images.push({ url: variantImg, label: variantLabel })
+                }
+            })
+        }
+        return images
+    })()
+
+    // Obtener imagen de la variante seleccionada (si tiene)
+    const variantImage = selectedVariant?.metadata?.image || selectedVariant?.thumbnail || null
+
+    // Imagen principal a mostrar
+    const displayImage = selectedImage || variantImage || product.thumbnail || allImages[0]?.url || null
+
     return (
         <main className={styles.main}>
             <Header />
@@ -193,9 +244,9 @@ export default function ProductDetailPage() {
                 <div className={styles.content}>
                     <div className={styles.imageSection}>
                         <div className={styles.imageWrapper}>
-                            {product.thumbnail ? (
+                            {displayImage ? (
                                 <img
-                                    src={product.thumbnail}
+                                    src={displayImage}
                                     alt={product.title}
                                     className={styles.image}
                                 />
@@ -212,6 +263,26 @@ export default function ProductDetailPage() {
                                 <Badge variant="new" className={styles.badge}>Nuevo</Badge>
                             )}
                         </div>
+
+                        {/* Galería de miniaturas */}
+                        {allImages.length > 1 && (
+                            <div className={styles.thumbnailStrip}>
+                                {allImages.map((img, index) => (
+                                    <button
+                                        key={img.url}
+                                        className={`${styles.thumbnailButton} ${displayImage === img.url ? styles.thumbnailActive : ''}`}
+                                        onClick={() => setSelectedImage(img.url)}
+                                        title={img.label}
+                                    >
+                                        <img
+                                            src={img.url}
+                                            alt={img.label}
+                                            className={styles.thumbnailImage}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className={styles.details}>

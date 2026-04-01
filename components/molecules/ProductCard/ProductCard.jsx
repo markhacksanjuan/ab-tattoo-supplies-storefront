@@ -19,12 +19,19 @@ export default function ProductCard({ product }) {
     // Obtener el precio usando el helper de Medusa v2
     const price = getProductPrice(product)
 
+    // Imagen a mostrar: thumbnail > primera imagen del producto > imagen de la primera variante
+    const displayImage = product.thumbnail
+        || product.images?.[0]?.url
+        || product.variants?.[0]?.metadata?.image
+        || product.variants?.[0]?.thumbnail
+        || null
+
     return (
         <Link href={`/products/${product.id}`} className={styles.card}>
             <div className={styles.imageWrapper}>
-                {product.thumbnail ? (
+                {displayImage ? (
                     <img
-                        src={product.thumbnail}
+                        src={displayImage}
                         alt={product.title}
                         className={styles.image}
                     />
