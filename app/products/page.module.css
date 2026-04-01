@@ -130,6 +130,120 @@
     background-color: var(--color-gold-dark);
 }
 
+/* Floating filter button & panel — appears when sidebar is scrolled off-screen */
+.floatingFilterBtn {
+    position: fixed;
+    top: calc(var(--header-height) + var(--spacing-sm));
+    right: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-gold);
+    color: var(--color-black);
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    cursor: pointer;
+    z-index: calc(var(--z-sticky) + 2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    animation: floatIn 0.25s ease;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.floatingFilterBtn:hover {
+    background-color: var(--color-gold-dark);
+    transform: scale(1.05);
+}
+
+.floatingFilterBtnActive {
+    border-radius: var(--radius-md);
+}
+
+.floatingFilterBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.floatingFilterBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background-color: var(--color-black);
+    color: var(--color-gold);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+}
+
+/* Backdrop overlay — closes panel on click outside */
+.floatingBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-sticky));
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.2s ease;
+}
+
+/* Floating filter panel card */
+.floatingPanel {
+    position: fixed;
+    top: calc(var(--header-height) + var(--spacing-sm) + 44px);
+    right: var(--spacing-lg);
+    width: 320px;
+    max-height: calc(100vh - var(--header-height) - 80px);
+    overflow-y: auto;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--z-sticky) + 1);
+    animation: panelSlideIn 0.25s ease;
+}
+
+/* Inside the floating panel, override ProductFilters' sidebar styles */
+.floatingPanel aside,
+.floatingPanel > div {
+    position: static !important;
+    max-width: 100% !important;
+    min-width: unset !important;
+    background: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: var(--spacing-md) !important;
+}
+
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes panelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .grid {
@@ -155,6 +269,16 @@
     .header {
         flex-direction: column;
         gap: var(--spacing-sm);
+    }
+
+    .floatingPanel {
+        right: var(--spacing-sm);
+        left: var(--spacing-sm);
+        width: auto;
+    }
+
+    .floatingFilterBtn {
+        right: var(--spacing-sm);
     }
 }
 

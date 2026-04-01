@@ -49,6 +49,67 @@
     left: var(--spacing-md);
 }
 
+/* Card Image Arrows */
+.cardArrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    color: var(--color-white);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background-color var(--transition-fast);
+    z-index: 2;
+    padding: 0;
+}
+
+.imageWrapper:hover .cardArrow {
+    opacity: 1;
+}
+
+.cardArrow:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: var(--color-gold);
+}
+
+.cardArrowLeft {
+    left: 6px;
+}
+
+.cardArrowRight {
+    right: 6px;
+}
+
+/* Dot indicators */
+.dotIndicators {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    z-index: 2;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.4);
+    transition: background-color var(--transition-fast);
+}
+
+.dotActive {
+    background-color: var(--color-gold);
+}
+
 /* Content */
 .content {
     padding: var(--spacing-lg);
@@ -116,5 +177,17 @@
 
     .price {
         font-size: var(--font-size-h6);
+    }
+
+    /* En móvil mostrar flechas siempre (ligeramente) si hay más de 1 imagen */
+    .cardArrow {
+        opacity: 0.6;
+        width: 24px;
+        height: 24px;
+    }
+
+    .imageWrapper {
+        touch-action: pan-y;
+        user-select: none;
     }
 }

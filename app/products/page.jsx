@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
@@ -108,11 +108,80 @@ function ProductsContent() {
         loadProducts()
     }, [loadProducts])
 
+    // Floating filter panel — appears when sidebar filters scroll out of view
+    const filtersRef = useRef(null)
+    const [showFloatingFilter, setShowFloatingFilter] = useState(false)
+    const [floatingPanelOpen, setFloatingPanelOpen] = useState(false)
+
+    useEffect(() => {
+        const el = filtersRef.current
+        if (!el) return
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                const offScreen = !entry.isIntersecting
+                setShowFloatingFilter(offScreen)
+                // Close panel when sidebar comes back into view
+                if (!offScreen) setFloatingPanelOpen(false)
+            },
+            { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
+        )
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [])
+
+    // Close the floating panel whenever any filter changes (URL navigates)
+    useEffect(() => {
+        setFloatingPanelOpen(false)
+    }, [typeParam, categoryHandle, collectionHandle])
+
+    const activeFilterCount = [typeParam, categoryHandle, collectionHandle].filter(Boolean).length
+
     return (
         <div className={styles.layout}>
-            <Suspense fallback={<div className={styles.filtersSkeleton} />}>
-                <ProductFilters />
-            </Suspense>
+            <div ref={filtersRef}>
+                <Suspense fallback={<div className={styles.filtersSkeleton} />}>
+                    <ProductFilters />
+                </Suspense>
+            </div>
+
+            {showFloatingFilter && (
+                <>
+                    <button
+                        className={`${styles.floatingFilterBtn} ${floatingPanelOpen ? styles.floatingFilterBtnActive : ''}`}
+                        onClick={() => setFloatingPanelOpen(prev => !prev)}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            {floatingPanelOpen ? (
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            ) : (
+                                <>
+                                    <line x1="4" y1="6" x2="20" y2="6" />
+                                    <line x1="8" y1="12" x2="20" y2="12" />
+                                    <line x1="12" y1="18" x2="20" y2="18" />
+                                </>
+                            )}
+                        </svg>
+                        {floatingPanelOpen ? 'Cerrar' : 'Filtros'}
+                        {!floatingPanelOpen && activeFilterCount > 0 && (
+                            <span className={styles.floatingFilterBadge}>{activeFilterCount}</span>
+                        )}
+                    </button>
+
+                    {floatingPanelOpen && (
+                        <>
+                            <div
+                                className={styles.floatingBackdrop}
+                                onClick={() => setFloatingPanelOpen(false)}
+                            />
+                            <div className={styles.floatingPanel}>
+                                <Suspense fallback={<div style={{ padding: '1rem', color: 'var(--color-white-muted)' }}>Cargando filtros...</div>}>
+                                    <ProductFilters floating onFiltersChange={() => setFloatingPanelOpen(false)} />
+                                </Suspense>
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
             
             <div className={styles.content}>
                 <div className={styles.header}>

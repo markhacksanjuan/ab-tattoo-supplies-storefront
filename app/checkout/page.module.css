@@ -440,14 +440,24 @@
 
 @media (max-width: 768px) {
     .steps {
-        flex-direction: column;
-        gap: var(--spacing-md);
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+
+    .stepNumber {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .stepLabel {
+        font-size: 12px;
     }
 
     .stepLine {
-        width: 2px;
-        height: 30px;
-        margin: 0;
+        width: 40px;
+        height: 2px;
+        margin: 0 var(--spacing-xs);
     }
 
     .row {

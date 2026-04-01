@@ -89,6 +89,11 @@ export default function CartPage() {
                                     Proceder al Pago
                                 </Button>
                             </Link>
+                            <Link href="/products">
+                                <Button variant="outline" size="large" fullWidth>
+                                    Seguir Comprando
+                                </Button>
+                            </Link>
                             <button className={styles.clearBtn} onClick={clearCart}>
                                 Vaciar Carrito
                             </button>

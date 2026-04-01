@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PRODUCT_TYPES } from '@/lib/data/navigation'
 import styles from './Footer.module.css'
 
 export default function Footer() {
@@ -20,10 +21,12 @@ export default function Footer() {
                 <div className={styles.links}>
                     <div className={styles.column}>
                         <h4 className={styles.columnTitle}>Productos</h4>
-                        <Link href="/products?category=inks" className={styles.link}>Tintas</Link>
-                        <Link href="/products?category=needles" className={styles.link}>Agujas</Link>
-                        <Link href="/products?category=machines" className={styles.link}>Máquinas</Link>
-                        <Link href="/products?category=supplies" className={styles.link}>Suministros</Link>
+                        <Link href="/products" className={styles.link}>Todos los productos</Link>
+                        {PRODUCT_TYPES.map(type => (
+                            <Link key={type.slug} href={`/products?type=${type.slug}`} className={styles.link}>
+                                {type.value}
+                            </Link>
+                        ))}
                     </div>
                     <div className={styles.column}>
                         <h4 className={styles.columnTitle}>Cuenta</h4>

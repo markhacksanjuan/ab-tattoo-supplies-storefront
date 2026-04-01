@@ -61,7 +61,7 @@
 .filterTitle {
     font-size: var(--font-size-small);
     font-weight: 600;
-    color: var(--color-white-muted);
+    color: var(--color-gold);
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     margin: 0 0 var(--spacing-sm) 0;
@@ -97,7 +97,7 @@
 
 .filterItem.active {
     background-color: var(--color-gold);
-    color: var(--color-bg-primary);
+    color: var(--color-black);
     font-weight: 500;
 }
 
@@ -139,6 +139,26 @@
     margin-top: var(--spacing-sm);
     font-size: var(--font-size-xs);
     opacity: 0.7;
+}
+
+/* ── Floating panel mode — override mobile accordion ── */
+.filtersFloating {
+    position: static !important;
+    max-width: 100% !important;
+    min-width: unset !important;
+    margin: 0 !important;
+    padding: var(--spacing-md) !important;
+    background: none !important;
+    border: none !important;
+}
+
+.filtersFloating .filterBody {
+    display: block !important;
+    grid-template-rows: unset !important;
+}
+
+.filtersFloating .filterBodyInner {
+    overflow: visible !important;
 }
 
 /* ── Mobile styles ── */

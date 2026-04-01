@@ -90,6 +90,36 @@ export function CartProvider({ children }) {
             }
         }
 
+        // Optimistic update: reflect change in UI immediately
+        setCart(prev => {
+            if (!prev) return prev
+            const newItems = [...(prev.items || [])]
+            const existingIdx = newItems.findIndex(item => item.variant_id === selectedVariant.id)
+
+            if (existingIdx >= 0) {
+                newItems[existingIdx] = {
+                    ...newItems[existingIdx],
+                    quantity: newItems[existingIdx].quantity + quantity,
+                }
+            } else {
+                const variantPrice = selectedVariant.prices?.[0]?.amount ||
+                    selectedVariant.calculated_price?.calculated_amount || 0
+                newItems.push({
+                    id: `_optimistic_${Date.now()}`,
+                    variant_id: selectedVariant.id,
+                    title: product.title,
+                    subtitle: selectedVariant.title,
+                    variant_title: selectedVariant.title,
+                    thumbnail: product.thumbnail,
+                    unit_price: variantPrice,
+                    quantity,
+                })
+            }
+            const newItemTotal = newItems.reduce((sum, i) => sum + (i.unit_price || 0) * i.quantity, 0)
+            return { ...prev, items: newItems, item_total: newItemTotal }
+        })
+
+        // Sync with server in background
         const updatedCart = await addLineItem(currentCart.id, selectedVariant.id, quantity)
         if (updatedCart) {
             setCart(updatedCart)
@@ -98,6 +128,16 @@ export function CartProvider({ children }) {
 
     const removeFromCart = useCallback(async (lineItemId) => {
         if (!cart?.id) return
+
+        // Optimistic update
+        setCart(prev => {
+            if (!prev) return prev
+            const newItems = prev.items.filter(item => item.id !== lineItemId)
+            const newItemTotal = newItems.reduce((sum, i) => sum + (i.unit_price || 0) * i.quantity, 0)
+            return { ...prev, items: newItems, item_total: newItemTotal }
+        })
+
+        // Sync with server
         const updatedCart = await removeLineItem(cart.id, lineItemId)
         if (updatedCart) {
             setCart(updatedCart)
@@ -109,6 +149,18 @@ export function CartProvider({ children }) {
         if (quantity <= 0) {
             return removeFromCart(lineItemId)
         }
+
+        // Optimistic update
+        setCart(prev => {
+            if (!prev) return prev
+            const newItems = prev.items.map(item =>
+                item.id === lineItemId ? { ...item, quantity } : item
+            )
+            const newItemTotal = newItems.reduce((sum, i) => sum + (i.unit_price || 0) * i.quantity, 0)
+            return { ...prev, items: newItems, item_total: newItemTotal }
+        })
+
+        // Sync with server in background
         const updatedCart = await updateLineItem(cart.id, lineItemId, quantity)
         if (updatedCart) {
             setCart(updatedCart)

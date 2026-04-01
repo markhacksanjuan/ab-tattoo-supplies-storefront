@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues, findBestVariant } from '@/lib/api/medusa'
 import { resolveTypeSlug } from '@/lib/data/navigation'
@@ -21,6 +21,7 @@ export default function ProductDetailPage() {
     const [selectedOptions, setSelectedOptions] = useState({})
     const [selectedVariant, setSelectedVariant] = useState(null)
     const [selectedImage, setSelectedImage] = useState(null)
+    const [quantity, setQuantity] = useState(1)
 
     useEffect(() => {
         loadProduct()
@@ -41,6 +42,9 @@ export default function ProductDetailPage() {
         })
 
         setSelectedVariant(matchingVariant || null)
+
+        // Reset quantity on variant change
+        setQuantity(1)
 
         // Si la variante tiene imagen propia, cambiar a ella automáticamente
         if (matchingVariant) {
@@ -117,7 +121,8 @@ export default function ProductDetailPage() {
 
     const handleAddToCart = () => {
         if (selectedVariant) {
-            addToCart(product, selectedVariant)
+            addToCart(product, selectedVariant, quantity)
+            setQuantity(1)
         }
     }
 
@@ -199,6 +204,38 @@ export default function ProductDetailPage() {
 
     // Imagen principal a mostrar
     const displayImage = selectedImage || variantImage || product.thumbnail || allImages[0]?.url || null
+    const currentIndex = allImages.findIndex(img => img.url === displayImage)
+
+    const goToImage = useCallback((index) => {
+        if (allImages.length === 0) return
+        const wrapped = ((index % allImages.length) + allImages.length) % allImages.length
+        setSelectedImage(allImages[wrapped].url)
+    }, [allImages])
+
+    const goPrev = useCallback(() => goToImage(currentIndex - 1), [currentIndex, goToImage])
+    const goNext = useCallback(() => goToImage(currentIndex + 1), [currentIndex, goToImage])
+
+    // Swipe support
+    const touchStartX = useRef(null)
+    const touchStartY = useRef(null)
+
+    const handleTouchStart = useCallback((e) => {
+        touchStartX.current = e.touches[0].clientX
+        touchStartY.current = e.touches[0].clientY
+    }, [])
+
+    const handleTouchEnd = useCallback((e) => {
+        if (touchStartX.current === null) return
+        const deltaX = e.changedTouches[0].clientX - touchStartX.current
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current
+        // Solo swipe horizontal si el gesto es predominantemente horizontal
+        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX < 0) goNext()
+            else goPrev()
+        }
+        touchStartX.current = null
+        touchStartY.current = null
+    }, [goNext, goPrev])
 
     return (
         <main className={styles.main}>
@@ -243,12 +280,17 @@ export default function ProductDetailPage() {
 
                 <div className={styles.content}>
                     <div className={styles.imageSection}>
-                        <div className={styles.imageWrapper}>
+                        <div
+                            className={styles.imageWrapper}
+                            onTouchStart={allImages.length > 1 ? handleTouchStart : undefined}
+                            onTouchEnd={allImages.length > 1 ? handleTouchEnd : undefined}
+                        >
                             {displayImage ? (
                                 <img
                                     src={displayImage}
                                     alt={product.title}
                                     className={styles.image}
+                                    draggable={false}
                                 />
                             ) : (
                                 <div className={styles.placeholder}>
@@ -261,6 +303,33 @@ export default function ProductDetailPage() {
                             )}
                             {product.metadata?.isNew && (
                                 <Badge variant="new" className={styles.badge}>Nuevo</Badge>
+                            )}
+
+                            {/* Flechas de navegación */}
+                            {allImages.length > 1 && (
+                                <>
+                                    <button
+                                        className={`${styles.navArrow} ${styles.navArrowLeft}`}
+                                        onClick={goPrev}
+                                        aria-label="Imagen anterior"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="15 18 9 12 15 6" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        className={`${styles.navArrow} ${styles.navArrowRight}`}
+                                        onClick={goNext}
+                                        aria-label="Imagen siguiente"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="9 18 15 12 9 6" />
+                                        </svg>
+                                    </button>
+                                    <div className={styles.imageCounter}>
+                                        {(currentIndex >= 0 ? currentIndex : 0) + 1} / {allImages.length}
+                                    </div>
+                                </>
                             )}
                         </div>
 
@@ -360,6 +429,29 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className={styles.actions}>
+                            <div className={styles.quantityRow}>
+                                <span className={styles.quantityLabel}>Cantidad:</span>
+                                <div className={styles.quantityControls}>
+                                    <button
+                                        className={styles.quantityBtn}
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                        disabled={quantity <= 1}
+                                    >
+                                        −
+                                    </button>
+                                    <span className={styles.quantityValue}>{quantity}</span>
+                                    <button
+                                        className={styles.quantityBtn}
+                                        onClick={() => setQuantity(q => {
+                                            const max = manageInventory ? inventory : 99
+                                            return Math.min(max, q + 1)
+                                        })}
+                                        disabled={manageInventory && quantity >= inventory}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
                             <Button
                                 variant="primary"
                                 size="large"

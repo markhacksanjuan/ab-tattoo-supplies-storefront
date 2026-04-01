@@ -12,7 +12,7 @@ import {
 } from '@/lib/data/navigation'
 import styles from './ProductFilters.module.css'
 
-export default function ProductFilters({ onFiltersChange }) {
+export default function ProductFilters({ onFiltersChange, floating = false }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     
@@ -122,8 +122,9 @@ export default function ProductFilters({ onFiltersChange }) {
     }
 
     return (
-        <aside className={styles.filters}>
-            {/* Mobile toggle button */}
+        <aside className={`${styles.filters} ${floating ? styles.filtersFloating : ''}`}>
+            {/* Mobile toggle button — hidden when floating */}
+            {!floating && (
             <button
                 className={styles.mobileToggle}
                 onClick={() => setMobileOpen(prev => !prev)}
@@ -152,8 +153,9 @@ export default function ProductFilters({ onFiltersChange }) {
                     <polyline points="6 9 12 15 18 9" />
                 </svg>
             </button>
+            )}
 
-            <div className={`${styles.filterBody} ${mobileOpen ? styles.filterBodyOpen : ''}`}>
+            <div className={`${styles.filterBody} ${(mobileOpen || floating) ? styles.filterBodyOpen : ''}`}>
             <div className={styles.filterBodyInner}>
             <div className={styles.header}>
                 <h3 className={styles.title}>Filtros</h3>
