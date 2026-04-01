@@ -7,7 +7,6 @@ import {
     addLineItem,
     updateLineItem,
     removeLineItem,
-    updateCart as updateCartApi,
     getDefaultRegion,
 } from '@/lib/api/medusa'
 import { useAuth } from '@/lib/context/AuthContext'
@@ -23,16 +22,6 @@ export function CartProvider({ children }) {
     useEffect(() => {
         initializeCart()
     }, [])
-
-    // Associate cart with customer when user logs in (has medusa_customer_id)
-    useEffect(() => {
-        if (cart?.id && user?.medusa_customer_id && !cart.customer_id) {
-            updateCartApi(cart.id, { customer_id: user.medusa_customer_id })
-                .then(updatedCart => {
-                    if (updatedCart) setCart(updatedCart)
-                })
-        }
-    }, [user?.medusa_customer_id, cart?.id])
 
     const initializeCart = async () => {
         setLoading(true)

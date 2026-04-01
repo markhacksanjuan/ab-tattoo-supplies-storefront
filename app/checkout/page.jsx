@@ -134,6 +134,9 @@ export default function CheckoutPage() {
     // Stripe client secret for PaymentElement
     const [clientSecret, setClientSecret] = useState(null)
 
+    // Shipping error
+    const [shippingError, setShippingError] = useState(null)
+
     // Saved addresses
     const [savedAddresses, setSavedAddresses] = useState([])
     const [selectedAddressId, setSelectedAddressId] = useState('new')
@@ -333,14 +336,20 @@ export default function CheckoutPage() {
             const options = await getShippingOptions(cart.id)
             setShippingOptions(options)
 
-            if (options.length > 0) {
-                const firstOption = options[0]
-                setSelectedShippingOption(firstOption.id)
-                await addShippingMethod(cart.id, firstOption.id)
+            if (options.length === 0) {
+                setShippingError('No hay métodos de envío disponibles para tu dirección. Verifica la dirección o contacta con soporte.')
+                setLoading(false)
+                return
             }
 
-            // 5. Initialize Stripe payment session
-            const paymentSession = await initializePaymentSession(cart.id)
+            setShippingError(null)
+            const firstOption = options[0]
+            setSelectedShippingOption(firstOption.id)
+            const updatedCart = await addShippingMethod(cart.id, firstOption.id)
+
+            // 5. Initialize Stripe payment session (pass paymentCollectionId to avoid extra getCart call)
+            const pcId = updatedCart?.payment_collection?.id
+            const paymentSession = await initializePaymentSession(cart.id, 'pp_stripe_stripe', pcId)
             if (paymentSession?.data?.client_secret) {
                 setClientSecret(paymentSession.data.client_secret)
             }
@@ -360,10 +369,12 @@ export default function CheckoutPage() {
         setLoading(true)
 
         try {
-            await addShippingMethod(cart.id, optionId)
+            const updatedCart = await addShippingMethod(cart.id, optionId)
 
             // Re-initialize payment session with updated amount
-            const paymentSession = await initializePaymentSession(cart.id)
+            // Pass paymentCollectionId directly to avoid extra getCart call
+            const pcId = updatedCart?.payment_collection?.id
+            const paymentSession = await initializePaymentSession(cart.id, 'pp_stripe_stripe', pcId)
             if (paymentSession?.data?.client_secret) {
                 setClientSecret(paymentSession.data.client_secret)
             }
@@ -646,6 +657,12 @@ export default function CheckoutPage() {
                                                 />
                                             </div>
                                         </div>
+                                    )}
+
+                                    {shippingError && (
+                                        <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem', textAlign: 'center' }}>
+                                            {shippingError}
+                                        </p>
                                     )}
 
                                     <Button
