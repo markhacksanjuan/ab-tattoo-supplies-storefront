@@ -1,28 +1,42 @@
-/* Reuse same styles as homepage categories */
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .container {
+    flex: 1;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 0 var(--spacing-xxxl);
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    padding-top: calc(var(--header-height) + var(--spacing-xxl));
+    width: 100%;
 }
 
-.categories {
-    padding: var(--spacing-xxxl) 0;
-}
-
-.sectionTitle {
+.header {
     text-align: center;
     margin-bottom: var(--spacing-xxl);
-    font-size: var(--font-size-h2);
-    color: var(--color-white);
 }
 
-.categoryGrid {
+.title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h2);
+    color: var(--color-white);
+    margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+    color: var(--color-white-muted);
+    font-size: var(--font-size-body);
+}
+
+.grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-lg);
 }
 
-.categoryCard {
+.brandCard {
     background-color: var(--color-bg-tertiary);
     border: 1px solid var(--color-gray-100);
     border-radius: var(--radius-md);
@@ -30,56 +44,51 @@
     text-align: center;
     text-decoration: none;
     transition: all var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
-.categoryCard:hover {
+.brandCard:hover {
     border-color: var(--color-gold);
     box-shadow: var(--shadow-lg), var(--shadow-gold);
+    transform: translateY(-2px);
 }
 
-.categoryIcon {
-    font-size: 48px;
-    display: block;
-    margin-bottom: var(--spacing-md);
+.brandIcon {
+    color: var(--color-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-gold-muted);
+    margin-bottom: var(--spacing-xs);
 }
 
-.categoryTitle {
+.brandName {
     font-family: var(--font-heading);
     font-size: var(--font-size-h5);
     color: var(--color-white);
-    margin-bottom: var(--spacing-sm);
 }
 
-.categoryCard:hover .categoryTitle {
+.brandCard:hover .brandName {
     color: var(--color-gold);
 }
 
-.categoryDesc {
-    font-size: var(--font-size-small);
+.empty {
+    text-align: center;
     color: var(--color-white-muted);
+    padding: var(--spacing-xxxl) 0;
 }
 
-/* Brands card — gold accent to stand out */
-.brandsCard {
-    border-color: var(--color-gold-muted);
-    background: linear-gradient(
-        135deg,
-        var(--color-bg-tertiary) 0%,
-        rgba(212, 175, 55, 0.05) 100%
-    );
-}
-
-.brandsCard .categoryIcon {
-    color: var(--color-gold);
-}
-
-/* Skeleton loading */
-.categorySkeleton {
+.skeleton {
     background-color: var(--color-bg-tertiary);
     border: 1px solid var(--color-gray-100);
     border-radius: var(--radius-md);
-    padding: var(--spacing-xl);
-    min-height: 140px;
+    min-height: 120px;
     animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -90,13 +99,19 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-    .categoryGrid {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 480px) {
-    .categoryGrid {
+    .grid {
         grid-template-columns: 1fr;
     }
 }

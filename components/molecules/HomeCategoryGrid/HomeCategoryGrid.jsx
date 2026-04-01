@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import { PRODUCT_TYPES, enrichWithApiData } from '@/lib/data/navigation'
 import { getProductTypes } from '@/lib/api/medusa'
 import { getIconComponent } from '@/lib/utils/iconMap'
+import { Tag } from 'lucide-react'
 import styles from './HomeCategoryGrid.module.css'
 
 export default function HomeCategoryGrid() {
@@ -40,6 +41,20 @@ export default function HomeCategoryGrid() {
                             </Link>
                         )
                     })}
+
+                    {/* Acceso directo a todas las marcas */}
+                    <Link
+                        href="/brands"
+                        className={`${styles.categoryCard} ${styles.brandsCard}`}
+                    >
+                        <span className={styles.categoryIcon}>
+                            <Tag size={32} />
+                        </span>
+                        <h3 className={styles.categoryTitle}>Marcas</h3>
+                        <p className={styles.categoryDesc}>
+                            Busca directamente por tu marca favorita
+                        </p>
+                    </Link>
                 </div>
             </div>
         </section>
