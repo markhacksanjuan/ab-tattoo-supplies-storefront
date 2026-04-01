@@ -10,6 +10,11 @@ const nextConfig = {
                 port: '9000',
                 pathname: '/uploads/**',
             },
+            // Google Cloud Storage (production images)
+            {
+                protocol: 'https',
+                hostname: 'storage.googleapis.com',
+            },
             // DO Spaces CDN (production)
             {
                 protocol: 'https',
