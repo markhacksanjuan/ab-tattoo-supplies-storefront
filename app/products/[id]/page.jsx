@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues } from '@/lib/api/medusa'
+import { resolveTypeSlug } from '@/lib/data/navigation'
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import Button from '@/components/atoms/Button/Button'
@@ -131,6 +132,26 @@ export default function ProductDetailPage() {
             <div className={styles.container}>
                 <div className={styles.breadcrumb}>
                     <a href="/products">Productos</a>
+                    {product.type?.value && (() => {
+                        const typeObj = resolveTypeSlug(product.type.value)
+                        return typeObj ? (
+                            <>
+                                <span>/</span>
+                                <a href={`/products?type=${typeObj.slug}`}>{typeObj.value}</a>
+                            </>
+                        ) : null
+                    })()}
+                    {product.categories?.[0] && (() => {
+                        const cat = product.categories[0]
+                        const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
+                        const typeSlug = typeObj?.slug || ''
+                        return (
+                            <>
+                                <span>/</span>
+                                <a href={`/products?type=${typeSlug}&category=${cat.handle}`}>{cat.name}</a>
+                            </>
+                        )
+                    })()}
                     <span>/</span>
                     <span>{product.title}</span>
                 </div>

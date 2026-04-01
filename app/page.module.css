@@ -196,6 +196,7 @@
     .hero {
         min-height: 60vh;
         padding: var(--spacing-xxl) var(--spacing-lg);
+        margin-top: var(--spacing-lg);
     }
 
     .heroTitle {

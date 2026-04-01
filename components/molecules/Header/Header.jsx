@@ -4,64 +4,25 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useCart } from '@/lib/context/CartContext'
-import { getCategories } from '@/lib/api/medusa'
+import { PRODUCT_TYPES, enrichWithApiData } from '@/lib/data/navigation'
+import { getProductTypes } from '@/lib/api/medusa'
 import styles from './Header.module.css'
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [activeDropdown, setActiveDropdown] = useState(null)
-    const [navItems, setNavItems] = useState([])
     const [mobileOpenSections, setMobileOpenSections] = useState({})
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const { cartCount } = useCart()
     const dropdownTimeout = useRef(null)
+    const enrichedRef = useRef(false)
 
-    // Fetch categories from Medusa and build nav structure
+    // Enrich type IDs from API in background — no setState, no re-render
     useEffect(() => {
-        let cancelled = false
-
-        async function loadNavigation() {
-            try {
-                const categories = await getCategories()
-                if (cancelled) return
-
-                // Parent categories (no parent) become main nav items
-                // Their children become dropdown sub-items
-                const parentCategories = categories.filter(
-                    cat => !cat.parent_category_id && !cat.parent_category
-                )
-
-                const items = parentCategories.map(parent => {
-                    const children = parent.category_children || []
-
-                    // Build subcategories: first item = "All" link, then children
-                    const subcategories = [
-                        {
-                            label: `Tod${getArticle(parent.name)} ${parent.name}`,
-                            href: `/products?category=${parent.handle}`,
-                        },
-                        ...children.map(child => ({
-                            label: child.name,
-                            href: `/products?category=${child.handle}`,
-                        })),
-                    ]
-
-                    return {
-                        label: parent.name,
-                        href: `/products?category=${parent.handle}`,
-                        subcategories: subcategories.length > 1 ? subcategories : null,
-                    }
-                })
-
-                setNavItems(items)
-            } catch (error) {
-                console.error('Error loading navigation categories:', error)
-            }
-        }
-
-        loadNavigation()
-        return () => { cancelled = true }
+        if (enrichedRef.current) return
+        enrichedRef.current = true
+        enrichWithApiData(getProductTypes)
     }, [])
 
     useEffect(() => {
@@ -75,7 +36,34 @@ export default function Header() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        const html = document.documentElement
+        const body = document.body
+        if (mobileMenuOpen) {
+            html.style.overflow = 'hidden'
+            body.style.overflow = 'hidden'
+            html.style.position = 'fixed'
+            html.style.width = '100%'
+            html.style.height = '100%'
+        } else {
+            html.style.overflow = ''
+            body.style.overflow = ''
+            html.style.position = ''
+            html.style.width = ''
+            html.style.height = ''
+        }
+        return () => {
+            html.style.overflow = ''
+            body.style.overflow = ''
+            html.style.position = ''
+            html.style.width = ''
+            html.style.height = ''
+        }
+    }, [mobileMenuOpen])
+
     const handleMouseEnter = (index) => {
+        if (window.innerWidth <= 768) return
         clearTimeout(dropdownTimeout.current)
         setActiveDropdown(index)
     }
@@ -99,6 +87,86 @@ export default function Header() {
         }))
     }
 
+    // Build dropdown content for a type
+    const renderDropdownContent = (type) => {
+        // Material has grouped categories
+        if (type.categoryGroups) {
+            return (
+                <>
+                    <Link
+                        href={`/products?type=${type.slug}`}
+                        className={styles.dropdownItem}
+                        onClick={closeAll}
+                    >
+                        Todo {type.value}
+                    </Link>
+                    <div className={styles.dropdownDivider} />
+
+                    {type.categoryGroups.map((group, gi) => (
+                        <div key={group.groupLabel} className={styles.dropdownSection}>
+                            <span className={styles.dropdownSectionTitle}>
+                                {group.groupLabel}
+                            </span>
+                            {group.categories.map((cat) => (
+                                <Link
+                                    key={cat.handle}
+                                    href={`/products?type=${type.slug}&category=${cat.handle}`}
+                                    className={styles.dropdownItem}
+                                    onClick={closeAll}
+                                >
+                                    {cat.label}
+                                </Link>
+                            ))}
+                            {gi < type.categoryGroups.length - 1 && (
+                                <div className={styles.dropdownDivider} />
+                            )}
+                        </div>
+                    ))}
+                </>
+            )
+        }
+
+        // Agujas & Tintas — flat categories + brands section
+        return (
+            <>
+                <Link
+                    href={`/products?type=${type.slug}`}
+                    className={styles.dropdownItem}
+                    onClick={closeAll}
+                >
+                    {getArticlePrefix(type.value)} {type.value}
+                </Link>
+                <div className={styles.dropdownDivider} />
+                {type.categories.map((cat) => (
+                    <Link
+                        key={cat.handle}
+                        href={`/products?type=${type.slug}&category=${cat.handle}`}
+                        className={styles.dropdownItem}
+                        onClick={closeAll}
+                    >
+                        {cat.label}
+                    </Link>
+                ))}
+                {type.brands.length > 0 && (
+                    <>
+                        <div className={styles.dropdownDivider} />
+                        <span className={styles.dropdownSectionTitle}>Marcas</span>
+                        {type.brands.map((brand) => (
+                            <Link
+                                key={brand.handle}
+                                href={`/products?type=${type.slug}&collection=${brand.handle}`}
+                                className={styles.dropdownItem}
+                                onClick={closeAll}
+                            >
+                                {brand.label}
+                            </Link>
+                        ))}
+                    </>
+                )}
+            </>
+        )
+    }
+
     return (
         <header className={`${styles.header} ${isScrolled ? styles.headerScrolled : ''}`}>
             <div className={styles.container}>
@@ -108,62 +176,55 @@ export default function Header() {
                     <span className={styles.logoAccent}>SUPPLIES</span>
                 </Link>
 
-                {/* Navigation */}
+                {/* Navigation — rendered from static PRODUCT_TYPES (no API wait) */}
                 <nav className={`${styles.nav} ${mobileMenuOpen ? styles.navOpen : ''}`}>
                     <Link href="/products" className={styles.navLink} onClick={closeAll}>
                         Todos
                     </Link>
 
-                    {navItems.map((item, index) => (
+                    {PRODUCT_TYPES.map((type, index) => (
                         <div
-                            key={item.label}
+                            key={type.slug}
                             className={styles.navDropdown}
                             onMouseEnter={() => handleMouseEnter(index)}
                             onMouseLeave={handleMouseLeave}
                         >
-                            <Link href={item.href} className={styles.navLink} onClick={closeAll}>
-                                {item.label}
-                                {item.subcategories && (
-                                    <svg
-                                        className={styles.chevron}
-                                        width="10"
-                                        height="10"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2.5"
-                                        onClick={(e) => {
-                                            // On mobile, toggle section instead of navigating
-                                            if (window.innerWidth <= 768) {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                                toggleMobileSection(index)
-                                            }
-                                        }}
-                                    >
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                )}
+                            <Link
+                                href={`/products?type=${type.slug}`}
+                                className={styles.navLink}
+                                onClick={(e) => {
+                                    // On mobile: toggle dropdown instead of navigating
+                                    if (window.innerWidth <= 768) {
+                                        e.preventDefault()
+                                        toggleMobileSection(index)
+                                    } else {
+                                        closeAll()
+                                    }
+                                }}
+                            >
+                                {type.value}
+                                <svg
+                                    className={`${styles.chevron} ${mobileOpenSections[index] ? styles.chevronOpen : ''}`}
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                >
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
                             </Link>
 
-                            {item.subcategories && (
-                                <div className={`${styles.dropdown} ${
-                                    activeDropdown === index || mobileOpenSections[index]
-                                        ? styles.dropdownOpen
-                                        : ''
-                                }`}>
-                                    {item.subcategories.map((sub) => (
-                                        <Link
-                                            key={sub.href}
-                                            href={sub.href}
-                                            className={styles.dropdownItem}
-                                            onClick={closeAll}
-                                        >
-                                            {sub.label}
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
+                            <div className={`${styles.dropdown} ${
+                                type.categoryGroups ? styles.dropdownWide : ''
+                            } ${
+                                activeDropdown === index || mobileOpenSections[index]
+                                    ? styles.dropdownOpen
+                                    : ''
+                            }`}>
+                                {renderDropdownContent(type)}
+                            </div>
                         </div>
                     ))}
                 </nav>
@@ -211,11 +272,11 @@ export default function Header() {
 }
 
 /**
- * Helper: returns the correct Spanish article suffix for "Todos/Todas las X"
+ * Helper: returns the correct Spanish prefix for "Todas/Todos los/las X"
  * Simple heuristic: words ending in 'a' or 'as' use feminine
  */
-function getArticle(name) {
+function getArticlePrefix(name) {
     const lower = name.toLowerCase().trim()
-    if (lower.endsWith('as') || lower.endsWith('a')) return 'as las'
-    return 'os los'
+    if (lower.endsWith('as') || lower.endsWith('a')) return 'Todas las'
+    return 'Todo'
 }

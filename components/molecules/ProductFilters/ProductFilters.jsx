@@ -1,8 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getCollections, getCategories, getProductTypes } from '@/lib/api/medusa'
+import {
+    PRODUCT_TYPES,
+    resolveTypeSlug,
+    getCategoriesForType,
+    getBrandsForType,
+    enrichWithApiData,
+} from '@/lib/data/navigation'
 import styles from './ProductFilters.module.css'
 
 export default function ProductFilters({ onFiltersChange }) {
@@ -11,9 +18,9 @@ export default function ProductFilters({ onFiltersChange }) {
     
     const [collections, setCollections] = useState([])
     const [categories, setCategories] = useState([])
-    const [productTypes, setProductTypes] = useState([])
     const [loading, setLoading] = useState(true)
     const [filtersError, setFiltersError] = useState(false)
+    const enrichedRef = useRef(false)
     
     // Get current filter values from URL
     const currentCollection = searchParams.get('collection') || ''
@@ -24,19 +31,24 @@ export default function ProductFilters({ onFiltersChange }) {
         loadFilters()
     }, [])
 
+    // Enrich type IDs in background
+    useEffect(() => {
+        if (enrichedRef.current) return
+        enrichedRef.current = true
+        enrichWithApiData(getProductTypes)
+    }, [])
+
     const loadFilters = async () => {
         setLoading(true)
         setFiltersError(false)
         try {
-            const [collectionsData, categoriesData, typesData] = await Promise.all([
+            const [collectionsData, categoriesData] = await Promise.all([
                 getCollections().catch(() => []),
                 getCategories().catch(() => []),
-                getProductTypes().catch(() => [])
             ])
             
             setCollections(collectionsData || [])
             setCategories(categoriesData || [])
-            setProductTypes(typesData || [])
         } catch (error) {
             console.error('Error loading filters:', error)
             setFiltersError(true)
@@ -53,16 +65,20 @@ export default function ProductFilters({ onFiltersChange }) {
         } else {
             params.delete(key)
         }
+
+        // When changing type, clear category and collection (they belong to the old type)
+        if (key === 'type') {
+            params.delete('category')
+            params.delete('collection')
+        }
         
-        // Navigate to new URL with updated params
         router.push(`/products?${params.toString()}`)
         
-        // Notify parent component
         if (onFiltersChange) {
             onFiltersChange({
-                collection: key === 'collection' ? value : currentCollection,
-                category: key === 'category' ? value : currentCategory,
-                type: key === 'type' ? value : currentType
+                collection: key === 'collection' ? value : (key === 'type' ? '' : currentCollection),
+                category: key === 'category' ? value : (key === 'type' ? '' : currentCategory),
+                type: key === 'type' ? value : currentType,
             })
         }
     }
@@ -75,7 +91,20 @@ export default function ProductFilters({ onFiltersChange }) {
     }
 
     const hasActiveFilters = currentCollection || currentCategory || currentType
-    const hasFilters = (collections?.length > 0) || (categories?.length > 0) || (productTypes?.length > 0)
+
+    // Determine which categories and collections to show based on active type
+    const activeType = resolveTypeSlug(currentType)
+    const allowedCategoryHandles = activeType ? getCategoriesForType(currentType) : null
+    const allowedBrandHandles = activeType ? getBrandsForType(currentType) : null
+
+    // Filter API data to only show relevant items
+    const filteredCategories = allowedCategoryHandles
+        ? categories.filter(cat => allowedCategoryHandles.includes(cat.handle))
+        : categories.filter(cat => !cat.parent_category_id && !cat.parent_category)
+
+    const filteredCollections = allowedBrandHandles
+        ? collections.filter(col => allowedBrandHandles.includes(col.handle))
+        : collections
 
     if (loading) {
         return (
@@ -103,37 +132,37 @@ export default function ProductFilters({ onFiltersChange }) {
                 )}
             </div>
 
-            {/* Collections Filter */}
-            {collections?.length > 0 && (
-                <div className={styles.filterGroup}>
-                    <h4 className={styles.filterTitle}>Colecciones</h4>
-                    <ul className={styles.filterList}>
-                        <li>
+            {/* Product Types Filter — always shown, uses slugs */}
+            <div className={styles.filterGroup}>
+                <h4 className={styles.filterTitle}>Tipo de Producto</h4>
+                <ul className={styles.filterList}>
+                    <li>
+                        <button
+                            className={`${styles.filterItem} ${!currentType ? styles.active : ''}`}
+                            onClick={() => updateFilters('type', '')}
+                        >
+                            Todos los tipos
+                        </button>
+                    </li>
+                    {PRODUCT_TYPES.map((type) => (
+                        <li key={type.slug}>
                             <button
-                                className={`${styles.filterItem} ${!currentCollection ? styles.active : ''}`}
-                                onClick={() => updateFilters('collection', '')}
+                                className={`${styles.filterItem} ${currentType === type.slug ? styles.active : ''}`}
+                                onClick={() => updateFilters('type', type.slug)}
                             >
-                                Todas las colecciones
+                                {type.value}
                             </button>
                         </li>
-                        {collections.map((collection) => (
-                            <li key={collection.id}>
-                                <button
-                                    className={`${styles.filterItem} ${currentCollection === collection.handle ? styles.active : ''}`}
-                                    onClick={() => updateFilters('collection', collection.handle)}
-                                >
-                                    {collection.title}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+                    ))}
+                </ul>
+            </div>
 
-            {/* Categories Filter */}
-            {categories?.length > 0 && (
+            {/* Categories Filter — contextual to active type */}
+            {filteredCategories.length > 0 && (
                 <div className={styles.filterGroup}>
-                    <h4 className={styles.filterTitle}>Categorías</h4>
+                    <h4 className={styles.filterTitle}>
+                        {activeType ? `Categorías de ${activeType.value}` : 'Categorías'}
+                    </h4>
                     <ul className={styles.filterList}>
                         <li>
                             <button
@@ -143,7 +172,7 @@ export default function ProductFilters({ onFiltersChange }) {
                                 Todas las categorías
                             </button>
                         </li>
-                        {categories.map((category) => (
+                        {filteredCategories.map((category) => (
                             <li key={category.id}>
                                 <button
                                     className={`${styles.filterItem} ${currentCategory === category.handle ? styles.active : ''}`}
@@ -157,40 +186,32 @@ export default function ProductFilters({ onFiltersChange }) {
                 </div>
             )}
 
-            {/* Product Types Filter */}
-            {productTypes?.length > 0 && (
+            {/* Collections/Brands Filter — contextual to active type */}
+            {filteredCollections.length > 0 && (
                 <div className={styles.filterGroup}>
-                    <h4 className={styles.filterTitle}>Tipo de Producto</h4>
+                    <h4 className={styles.filterTitle}>
+                        {activeType ? `Marcas de ${activeType.value}` : 'Marcas'}
+                    </h4>
                     <ul className={styles.filterList}>
                         <li>
                             <button
-                                className={`${styles.filterItem} ${!currentType ? styles.active : ''}`}
-                                onClick={() => updateFilters('type', '')}
+                                className={`${styles.filterItem} ${!currentCollection ? styles.active : ''}`}
+                                onClick={() => updateFilters('collection', '')}
                             >
-                                Todos los tipos
+                                Todas las marcas
                             </button>
                         </li>
-                        {productTypes.map((type) => (
-                            <li key={type.id}>
+                        {filteredCollections.map((collection) => (
+                            <li key={collection.id}>
                                 <button
-                                    className={`${styles.filterItem} ${currentType === type.id ? styles.active : ''}`}
-                                    onClick={() => updateFilters('type', type.id)}
+                                    className={`${styles.filterItem} ${currentCollection === collection.handle ? styles.active : ''}`}
+                                    onClick={() => updateFilters('collection', collection.handle)}
                                 >
-                                    {type.value}
+                                    {collection.title}
                                 </button>
                             </li>
                         ))}
                     </ul>
-                </div>
-            )}
-
-            {/* Empty state */}
-            {!hasFilters && (
-                <div className={styles.empty}>
-                    <p>No hay filtros disponibles aún.</p>
-                    <p className={styles.hint}>
-                        Agrega colecciones, categorías o tipos de productos en el panel de administración de Medusa.
-                    </p>
                 </div>
             )}
         </aside>

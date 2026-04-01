@@ -7,19 +7,13 @@ import Footer from '@/components/molecules/Footer/Footer'
 import ProductCard from '@/components/molecules/ProductCard/ProductCard'
 import ProductFilters from '@/components/molecules/ProductFilters/ProductFilters'
 import { getProducts, getCollection, getCategory, getProductTypes } from '@/lib/api/medusa'
+import { resolveTypeSlug, enrichWithApiData } from '@/lib/data/navigation'
 import styles from './page.module.css'
-
-// Map type handles (used in URL) to display names
-const TYPE_LABELS = {
-    agujas: 'Agujas',
-    tintas: 'Tintas',
-    material: 'Material',
-}
 
 function ProductsContent() {
     const searchParams = useSearchParams()
     
-    // Get filter values from URL
+    // Get filter values from URL — type always uses slugs (e.g. "agujas")
     const collectionHandle = searchParams.get('collection') || ''
     const categoryHandle = searchParams.get('category') || ''
     const typeParam = searchParams.get('type') || ''
@@ -27,53 +21,74 @@ function ProductsContent() {
     const [products, setProducts] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [pageTitle, setPageTitle] = useState('All Products')
+    const [pageTitle, setPageTitle] = useState('Todos los Productos')
 
     const loadProducts = useCallback(async () => {
         setLoading(true)
         setError(null)
         
         try {
-            // Build query params for Medusa API
             const params = {
                 limit: 100,
                 expand: 'variants,variants.prices,collection,tags,type'
             }
+
+            // Determine page title parts
+            let titleParts = []
             
-            // Apply filters based on URL params
-            if (collectionHandle) {
-                // First get the collection ID from handle
-                const collection = await getCollection(collectionHandle)
-                if (collection) {
-                    params.collection_id = [collection.id]
-                    setPageTitle(collection.title)
+            // Type filter — resolve slug to Medusa UUID via navigation map
+            if (typeParam) {
+                // Ensure type IDs are enriched from API
+                await enrichWithApiData(getProductTypes)
+                
+                const typeObj = resolveTypeSlug(typeParam)
+                if (typeObj?.typeId) {
+                    params.type_id = [typeObj.typeId]
+                    titleParts.push(typeObj.value)
+                } else if (typeObj) {
+                    // Type recognized in map but UUID not yet available
+                    // Try direct API fallback
+                    const allTypes = await getProductTypes()
+                    const match = allTypes.find(
+                        t => t.value?.toLowerCase().trim() === typeParam.toLowerCase().trim()
+                    )
+                    if (match) {
+                        params.type_id = [match.id]
+                        titleParts.push(typeObj.value)
+                    } else {
+                        console.warn(`[products] Type "${typeParam}" not found in API`)
+                        titleParts.push(typeObj.value)
+                    }
                 } else {
-                    setPageTitle('Colección no encontrada')
+                    console.warn(`[products] Unknown type slug: "${typeParam}"`)
                 }
-            } else if (categoryHandle) {
-                // Get category ID from handle
+            }
+
+            // Category filter
+            if (categoryHandle) {
                 const category = await getCategory(categoryHandle)
                 if (category) {
                     params.category_id = [category.id]
-                    setPageTitle(category.name)
+                    titleParts.push(category.name)
                 } else {
-                    setPageTitle('Categoría no encontrada')
+                    titleParts.push('Categoría no encontrada')
                 }
-            } else if (typeParam) {
-                // typeParam can be a handle (e.g. "agujas") or an actual type ID
-                // First try to find the type by matching the value
-                const allTypes = await getProductTypes()
-                const matchedType = allTypes.find(
-                    t => t.value?.toLowerCase() === typeParam.toLowerCase()
-                )
-                if (matchedType) {
-                    params.type_id = [matchedType.id]
-                    setPageTitle(matchedType.value)
+            }
+
+            // Collection/brand filter
+            if (collectionHandle) {
+                const collection = await getCollection(collectionHandle)
+                if (collection) {
+                    params.collection_id = [collection.id]
+                    titleParts.push(collection.title)
                 } else {
-                    // Fallback: try using it as a direct type ID
-                    params.type_id = [typeParam]
-                    setPageTitle(TYPE_LABELS[typeParam] || 'Productos por Tipo')
+                    titleParts.push('Marca no encontrada')
                 }
+            }
+
+            // Set page title
+            if (titleParts.length > 0) {
+                setPageTitle(titleParts.join(' — '))
             } else {
                 setPageTitle('Todos los Productos')
             }
