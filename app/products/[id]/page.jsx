@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues } from '@/lib/api/medusa'
+import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues, findBestVariant } from '@/lib/api/medusa'
 import { resolveTypeSlug } from '@/lib/data/navigation'
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
@@ -110,10 +110,34 @@ export default function ProductDetailPage() {
     }
 
     const handleOptionChange = (optionId, value) => {
-        setSelectedOptions(prev => ({
-            ...prev,
-            [optionId]: value
-        }))
+        const newOptions = { ...selectedOptions, [optionId]: value }
+
+        // Check if this exact combination has a matching variant
+        const exactMatch = product.variants.find(variant =>
+            variant.options && Object.entries(newOptions).every(([oId, oVal]) =>
+                variant.options.some(vo => vo.option_id === oId && vo.value === oVal)
+            )
+        )
+
+        if (exactMatch) {
+            // Combination exists — just update
+            setSelectedOptions(newOptions)
+        } else {
+            // No exact match — find the best variant that has the newly
+            // selected value and adjust the other options to match
+            const best = findBestVariant(product, newOptions)
+            if (best?.options) {
+                const adjusted = {}
+                best.options.forEach(opt => {
+                    adjusted[opt.option_id] = opt.value
+                })
+                // Ensure the user's explicit choice is kept
+                adjusted[optionId] = value
+                setSelectedOptions(adjusted)
+            } else {
+                setSelectedOptions(newOptions)
+            }
+        }
     }
 
     // Obtener precio de la variante seleccionada usando helper de Medusa v2
@@ -141,7 +165,7 @@ export default function ProductDetailPage() {
                             </>
                         ) : null
                     })()}
-                    {product.categories?.[0] && (() => {
+                    {product.categories?.[0]?.name && (() => {
                         const cat = product.categories[0]
                         const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
                         const typeSlug = typeObj?.slug || ''
@@ -149,6 +173,16 @@ export default function ProductDetailPage() {
                             <>
                                 <span>/</span>
                                 <a href={`/products?type=${typeSlug}&category=${cat.handle}`}>{cat.name}</a>
+                            </>
+                        )
+                    })()}
+                    {product.collection?.title && (() => {
+                        const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
+                        const typeSlug = typeObj?.slug || ''
+                        return (
+                            <>
+                                <span>/</span>
+                                <a href={`/products?type=${typeSlug}&collection=${product.collection.handle}`}>{product.collection.title}</a>
                             </>
                         )
                     })()}
@@ -194,24 +228,31 @@ export default function ProductDetailPage() {
                         {product.options && product.options.length > 0 && (
                             <div className={styles.optionsSection}>
                                 {product.options.map(option => {
-                                    const availableValues = getAvailableOptionValues(product, option, selectedOptions)
+                                    const optionValues = getAvailableOptionValues(product, option, selectedOptions)
                                     return (
                                         <div key={option.id} className={styles.optionGroup}>
                                             <label className={styles.optionLabel}>{option.title}:</label>
                                             <div className={styles.optionValues}>
-                                                {availableValues.map(value => (
-                                                    <button
-                                                        key={value.id}
-                                                        className={`${styles.optionButton} ${
-                                                            selectedOptions[option.id] === value.value 
-                                                                ? styles.optionButtonActive 
-                                                                : ''
-                                                        }`}
-                                                        onClick={() => handleOptionChange(option.id, value.value)}
-                                                    >
-                                                        {value.value}
-                                                    </button>
-                                                ))}
+                                                {optionValues.map(value => {
+                                                    const isSelected = selectedOptions[option.id] === value.value
+                                                    const isUnavailable = !value.available && !isSelected
+                                                    return (
+                                                        <button
+                                                            key={value.id}
+                                                            className={`${styles.optionButton} ${
+                                                                isSelected
+                                                                    ? styles.optionButtonActive
+                                                                    : isUnavailable
+                                                                        ? styles.optionButtonUnavailable
+                                                                        : ''
+                                                            }`}
+                                                            onClick={() => handleOptionChange(option.id, value.value)}
+                                                            title={isUnavailable ? 'Combinación no disponible — se ajustarán las demás opciones' : ''}
+                                                        >
+                                                            {value.value}
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     )
