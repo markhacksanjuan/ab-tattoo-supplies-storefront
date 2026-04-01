@@ -87,6 +87,75 @@ export default function ProductDetailPage() {
         }
     }
 
+    // ── All hooks must be above early returns ──
+
+    // Construir lista completa de imágenes (thumbnail + product.images + variant images)
+    const allImages = (() => {
+        if (!product) return []
+        const urls = new Set()
+        const images = []
+        if (product.thumbnail) {
+            urls.add(product.thumbnail)
+            images.push({ url: product.thumbnail, label: product.title })
+        }
+        if (product.images?.length) {
+            product.images.forEach((img, i) => {
+                const url = img.url || img
+                if (url && !urls.has(url)) {
+                    urls.add(url)
+                    images.push({ url, label: `${product.title} - ${i + 1}` })
+                }
+            })
+        }
+        if (product.variants?.length) {
+            product.variants.forEach(variant => {
+                const variantImg = variant.metadata?.image || variant.thumbnail
+                if (variantImg && !urls.has(variantImg)) {
+                    urls.add(variantImg)
+                    const variantLabel = variant.title || variant.options?.map(o => o.value).join(' / ') || 'Variante'
+                    images.push({ url: variantImg, label: variantLabel })
+                }
+            })
+        }
+        return images
+    })()
+
+    const variantImage = selectedVariant?.metadata?.image || selectedVariant?.thumbnail || null
+    const displayImage = selectedImage || variantImage || product?.thumbnail || allImages[0]?.url || null
+    const currentIndex = allImages.findIndex(img => img.url === displayImage)
+
+    const goToImage = useCallback((index) => {
+        if (allImages.length === 0) return
+        const wrapped = ((index % allImages.length) + allImages.length) % allImages.length
+        setSelectedImage(allImages[wrapped].url)
+    }, [allImages])
+
+    const goPrev = useCallback(() => goToImage(currentIndex - 1), [currentIndex, goToImage])
+    const goNext = useCallback(() => goToImage(currentIndex + 1), [currentIndex, goToImage])
+
+    // Swipe support
+    const touchStartX = useRef(null)
+    const touchStartY = useRef(null)
+
+    const handleTouchStart = useCallback((e) => {
+        touchStartX.current = e.touches[0].clientX
+        touchStartY.current = e.touches[0].clientY
+    }, [])
+
+    const handleTouchEnd = useCallback((e) => {
+        if (touchStartX.current === null) return
+        const deltaX = e.changedTouches[0].clientX - touchStartX.current
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current
+        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX < 0) goNext()
+            else goPrev()
+        }
+        touchStartX.current = null
+        touchStartY.current = null
+    }, [goNext, goPrev])
+
+    // ── Early returns (after all hooks) ──
+
     if (loading) {
         return (
             <main className={styles.main}>
@@ -165,77 +234,6 @@ export default function ProductDetailPage() {
     // En Medusa v2, el inventario puede estar en manage_inventory y allow_backorder
     const inventory = selectedVariant?.inventory_quantity ?? product.variants?.[0]?.inventory_quantity ?? 0
     const manageInventory = selectedVariant?.manage_inventory ?? true
-
-    // Construir lista completa de imágenes (thumbnail + product.images + variant images)
-    const allImages = (() => {
-        const urls = new Set()
-        const images = []
-        // 1. Thumbnail primero
-        if (product.thumbnail) {
-            urls.add(product.thumbnail)
-            images.push({ url: product.thumbnail, label: product.title })
-        }
-        // 2. Imágenes del producto
-        if (product.images?.length) {
-            product.images.forEach((img, i) => {
-                const url = img.url || img
-                if (url && !urls.has(url)) {
-                    urls.add(url)
-                    images.push({ url, label: `${product.title} - ${i + 1}` })
-                }
-            })
-        }
-        // 3. Imágenes propias de cada variante
-        if (product.variants?.length) {
-            product.variants.forEach(variant => {
-                const variantImg = variant.metadata?.image || variant.thumbnail
-                if (variantImg && !urls.has(variantImg)) {
-                    urls.add(variantImg)
-                    const variantLabel = variant.title || variant.options?.map(o => o.value).join(' / ') || 'Variante'
-                    images.push({ url: variantImg, label: variantLabel })
-                }
-            })
-        }
-        return images
-    })()
-
-    // Obtener imagen de la variante seleccionada (si tiene)
-    const variantImage = selectedVariant?.metadata?.image || selectedVariant?.thumbnail || null
-
-    // Imagen principal a mostrar
-    const displayImage = selectedImage || variantImage || product.thumbnail || allImages[0]?.url || null
-    const currentIndex = allImages.findIndex(img => img.url === displayImage)
-
-    const goToImage = useCallback((index) => {
-        if (allImages.length === 0) return
-        const wrapped = ((index % allImages.length) + allImages.length) % allImages.length
-        setSelectedImage(allImages[wrapped].url)
-    }, [allImages])
-
-    const goPrev = useCallback(() => goToImage(currentIndex - 1), [currentIndex, goToImage])
-    const goNext = useCallback(() => goToImage(currentIndex + 1), [currentIndex, goToImage])
-
-    // Swipe support
-    const touchStartX = useRef(null)
-    const touchStartY = useRef(null)
-
-    const handleTouchStart = useCallback((e) => {
-        touchStartX.current = e.touches[0].clientX
-        touchStartY.current = e.touches[0].clientY
-    }, [])
-
-    const handleTouchEnd = useCallback((e) => {
-        if (touchStartX.current === null) return
-        const deltaX = e.changedTouches[0].clientX - touchStartX.current
-        const deltaY = e.changedTouches[0].clientY - touchStartY.current
-        // Solo swipe horizontal si el gesto es predominantemente horizontal
-        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-            if (deltaX < 0) goNext()
-            else goPrev()
-        }
-        touchStartX.current = null
-        touchStartY.current = null
-    }, [goNext, goPrev])
 
     return (
         <main className={styles.main}>
