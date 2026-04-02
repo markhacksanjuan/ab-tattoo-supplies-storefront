@@ -2,6 +2,7 @@ import './globals.css'
 import { CartProvider } from '@/lib/context/CartContext'
 import { AuthProvider } from '@/lib/context/AuthContext'
 import CookieBanner from '@/components/molecules/CookieBanner/CookieBanner'
+import ScrollToTop from '@/components/atoms/ScrollToTop/ScrollToTop'
 
 export const metadata = {
     title: 'AB-Tattoo - Professional Tattoo Supplies',
@@ -24,6 +25,7 @@ export default function RootLayout({ children }) {
                 <AuthProvider>
                     <CartProvider>
                         {children}
+                        <ScrollToTop />
                         <CookieBanner />
                     </CartProvider>
                 </AuthProvider>

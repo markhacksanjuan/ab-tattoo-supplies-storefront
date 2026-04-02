@@ -29,7 +29,10 @@ export default function AccountPage() {
         return (
             <main className={styles.main}>
                 <Header />
-                <div className={styles.loading}>Loading...</div>
+                <div className={styles.loading}>
+                    <div className={styles.spinner} />
+                    <p>Cargando cuenta…</p>
+                </div>
                 <Footer />
             </main>
         )

@@ -6,8 +6,10 @@ import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import ProductCard from '@/components/molecules/ProductCard/ProductCard'
 import ProductFilters from '@/components/molecules/ProductFilters/ProductFilters'
+import MobileSearch from '@/components/molecules/MobileSearch/MobileSearch'
 import { getProducts, getCollection, getCategory, getProductTypes } from '@/lib/api/medusa'
 import { resolveTypeSlug, enrichWithApiData } from '@/lib/data/navigation'
+import { PRODUCTS_PER_PAGE } from '@/lib/config'
 import styles from './page.module.css'
 
 function ProductsContent() {
@@ -17,96 +19,137 @@ function ProductsContent() {
     const collectionHandle = searchParams.get('collection') || ''
     const categoryHandle = searchParams.get('category') || ''
     const typeParam = searchParams.get('type') || ''
+    const searchQuery = searchParams.get('q') || ''
 
     const [products, setProducts] = useState([])
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
     const [error, setError] = useState(null)
     const [pageTitle, setPageTitle] = useState('Todos los Productos')
+    const [totalCount, setTotalCount] = useState(0)
+    const [currentOffset, setCurrentOffset] = useState(0)
 
-    const loadProducts = useCallback(async () => {
-        setLoading(true)
+    // Resolved filter params cached for "load more" calls
+    const resolvedParams = useRef({})
+
+    const loadProducts = useCallback(async (offset = 0, append = false) => {
+        if (append) {
+            setLoadingMore(true)
+        } else {
+            setLoading(true)
+            setProducts([])
+            setCurrentOffset(0)
+        }
         setError(null)
         
         try {
-            const params = {
-                limit: 100,
-                expand: 'variants,variants.prices,collection,tags,type'
-            }
+            let params
 
-            // Determine page title parts
-            let titleParts = []
-            
-            // Type filter — resolve slug to Medusa UUID via navigation map
-            if (typeParam) {
-                // Ensure type IDs are enriched from API
-                await enrichWithApiData(getProductTypes)
-                
-                const typeObj = resolveTypeSlug(typeParam)
-                if (typeObj?.typeId) {
-                    params.type_id = [typeObj.typeId]
-                    titleParts.push(typeObj.value)
-                } else if (typeObj) {
-                    // Type recognized in map but UUID not yet available
-                    // Try direct API fallback
-                    const allTypes = await getProductTypes()
-                    const match = allTypes.find(
-                        t => t.value?.toLowerCase().trim() === typeParam.toLowerCase().trim()
-                    )
-                    if (match) {
-                        params.type_id = [match.id]
-                        titleParts.push(typeObj.value)
-                    } else {
-                        console.warn(`[products] Type "${typeParam}" not found in API`)
-                        titleParts.push(typeObj.value)
-                    }
-                } else {
-                    console.warn(`[products] Unknown type slug: "${typeParam}"`)
-                }
-            }
-
-            // Category filter
-            if (categoryHandle) {
-                const category = await getCategory(categoryHandle)
-                if (category) {
-                    params.category_id = [category.id]
-                    titleParts.push(category.name)
-                } else {
-                    titleParts.push('Categoría no encontrada')
-                }
-            }
-
-            // Collection/brand filter
-            if (collectionHandle) {
-                const collection = await getCollection(collectionHandle)
-                if (collection) {
-                    params.collection_id = [collection.id]
-                    titleParts.push(collection.title)
-                } else {
-                    titleParts.push('Marca no encontrada')
-                }
-            }
-
-            // Set page title
-            if (titleParts.length > 0) {
-                setPageTitle(titleParts.join(' — '))
+            if (append) {
+                // Reuse previously resolved filters
+                params = { ...resolvedParams.current, offset, limit: PRODUCTS_PER_PAGE }
             } else {
-                setPageTitle('Todos los Productos')
+                params = {
+                    limit: PRODUCTS_PER_PAGE,
+                    offset: 0,
+                    expand: 'variants,variants.prices,collection,tags,type'
+                }
+
+                // Determine page title parts
+                let titleParts = []
+
+                // Search query
+                if (searchQuery) {
+                    params.q = searchQuery
+                    titleParts.push(`Resultados: «${searchQuery}»`)
+                }
+                
+                // Type filter — resolve slug to Medusa UUID via navigation map
+                if (typeParam) {
+                    await enrichWithApiData(getProductTypes)
+                    
+                    const typeObj = resolveTypeSlug(typeParam)
+                    if (typeObj?.typeId) {
+                        params.type_id = [typeObj.typeId]
+                        titleParts.push(typeObj.value)
+                    } else if (typeObj) {
+                        const allTypes = await getProductTypes()
+                        const match = allTypes.find(
+                            t => t.value?.toLowerCase().trim() === typeParam.toLowerCase().trim()
+                        )
+                        if (match) {
+                            params.type_id = [match.id]
+                            titleParts.push(typeObj.value)
+                        } else {
+                            console.warn(`[products] Type "${typeParam}" not found in API`)
+                            titleParts.push(typeObj.value)
+                        }
+                    } else {
+                        console.warn(`[products] Unknown type slug: "${typeParam}"`)
+                    }
+                }
+
+                // Category filter
+                if (categoryHandle) {
+                    const category = await getCategory(categoryHandle)
+                    if (category) {
+                        params.category_id = [category.id]
+                        titleParts.push(category.name)
+                    } else {
+                        titleParts.push('Categoría no encontrada')
+                    }
+                }
+
+                // Collection/brand filter
+                if (collectionHandle) {
+                    const collection = await getCollection(collectionHandle)
+                    if (collection) {
+                        params.collection_id = [collection.id]
+                        titleParts.push(collection.title)
+                    } else {
+                        titleParts.push('Marca no encontrada')
+                    }
+                }
+
+                // Set page title
+                if (titleParts.length > 0) {
+                    setPageTitle(titleParts.join(' — '))
+                } else {
+                    setPageTitle('Todos los Productos')
+                }
+
+                // Cache resolved params for subsequent "load more" calls
+                resolvedParams.current = { ...params }
             }
             
-            const { products: medusaProducts } = await getProducts(params)
-            setProducts(medusaProducts)
+            const { products: medusaProducts, count } = await getProducts(params)
+
+            if (append) {
+                setProducts(prev => [...prev, ...medusaProducts])
+            } else {
+                setProducts(medusaProducts)
+                setTotalCount(count)
+            }
+            setCurrentOffset(offset + medusaProducts.length)
         } catch (err) {
             console.error('Error loading products:', err)
             setError('Error cargando productos. Por favor, inténtalo de nuevo más tarde.')
-            setProducts([])
+            if (!append) setProducts([])
         } finally {
             setLoading(false)
+            setLoadingMore(false)
         }
-    }, [collectionHandle, categoryHandle, typeParam])
+    }, [collectionHandle, categoryHandle, typeParam, searchQuery])
 
     useEffect(() => {
-        loadProducts()
+        loadProducts(0, false)
     }, [loadProducts])
+
+    const handleLoadMore = () => {
+        loadProducts(currentOffset, true)
+    }
+
+    const hasMore = products.length < totalCount
 
     // Floating filter panel — appears when sidebar filters scroll out of view
     const filtersRef = useRef(null)
@@ -132,7 +175,7 @@ function ProductsContent() {
     // Close the floating panel whenever any filter changes (URL navigates)
     useEffect(() => {
         setFloatingPanelOpen(false)
-    }, [typeParam, categoryHandle, collectionHandle])
+    }, [typeParam, categoryHandle, collectionHandle, searchQuery])
 
     const activeFilterCount = [typeParam, categoryHandle, collectionHandle].filter(Boolean).length
 
@@ -182,12 +225,18 @@ function ProductsContent() {
                     )}
                 </>
             )}
+
+            {/* Mobile search button — below floating filter */}
+            <MobileSearch />
             
             <div className={styles.content}>
                 <div className={styles.header}>
                     <h1 className={styles.title}>{pageTitle}</h1>
                     <p className={styles.count}>
-                        {products.length} {products.length === 1 ? 'producto' : 'productos'}
+                        {loading
+                            ? 'Cargando…'
+                            : `${products.length} de ${totalCount} ${totalCount === 1 ? 'producto' : 'productos'}`
+                        }
                     </p>
                 </div>
 
@@ -199,21 +248,46 @@ function ProductsContent() {
                 ) : error ? (
                     <div className={styles.empty}>
                         <p className={styles.emptyText}>{error}</p>
-                        <button onClick={loadProducts} className={styles.retryButton}>
+                        <button onClick={() => loadProducts(0, false)} className={styles.retryButton}>
                             Intentar de nuevo
                         </button>
                     </div>
                 ) : products.length > 0 ? (
-                    <div className={styles.grid}>
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
+                    <>
+                        <div className={styles.grid}>
+                            {products.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+
+                        {/* Load more block */}
+                        <div className={styles.loadMoreBlock}>
+                            <p className={styles.loadMoreCount}>
+                                Mostrando {products.length} de {totalCount} {totalCount === 1 ? 'producto' : 'productos'}
+                            </p>
+                            {hasMore && (
+                                <button
+                                    className={styles.loadMoreBtn}
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <span className={styles.loadMoreSpinner} />
+                                            Cargando…
+                                        </>
+                                    ) : (
+                                        'Cargar más productos'
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    </>
                 ) : (
                     <div className={styles.empty}>
                         <p className={styles.emptyText}>No se encontraron productos</p>
                         <p className={styles.emptyHint}>
-                            {collectionHandle || categoryHandle || typeParam
+                            {collectionHandle || categoryHandle || typeParam || searchQuery
                                 ? 'Intenta seleccionar un filtro diferente o vuelve a intentarlo más tarde.'
                                 : 'Los productos aparecerán aquí una vez que se agreguen a la tienda.'
                             }

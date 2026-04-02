@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Search } from 'lucide-react'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useCart } from '@/lib/context/CartContext'
 import { PRODUCT_TYPES, enrichWithApiData } from '@/lib/data/navigation'
 import { getProductTypes } from '@/lib/api/medusa'
+import { SEARCH_MIN_LENGTH } from '@/lib/config'
 import styles from './Header.module.css'
 
 export default function Header() {
@@ -229,8 +232,42 @@ export default function Header() {
                     ))}
                 </nav>
 
-                {/* Actions */}
+                {/* Actions — order: Search · Cart · User · Mobile toggle */}
                 <div className={styles.actions}>
+                    {/* Desktop search pill */}
+                    <form
+                        className={styles.searchForm}
+                        onSubmit={(e) => {
+                            e.preventDefault()
+                            const q = e.target.elements.q.value.trim()
+                            if (q.length >= SEARCH_MIN_LENGTH) {
+                                e.target.elements.q.value = ''
+                                closeAll()
+                                window.location.href = `/products?q=${encodeURIComponent(q)}`
+                            }
+                        }}
+                    >
+                        <Search size={16} className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            name="q"
+                            placeholder="Buscar productos…"
+                            className={styles.searchInput}
+                            autoComplete="off"
+                        />
+                    </form>
+
+                    <Link href="/cart" className={styles.cartLink}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                        {cartCount > 0 && (
+                            <span className={styles.cartBadge}>{cartCount}</span>
+                        )}
+                    </Link>
+
                     {user ? (
                         <div className={styles.userMenu}>
                             <Link href="/account" className={styles.actionLink}>
@@ -245,17 +282,6 @@ export default function Header() {
                             Login
                         </Link>
                     )}
-
-                    <Link href="/cart" className={styles.cartLink}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="9" cy="21" r="1" />
-                            <circle cx="20" cy="21" r="1" />
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                        </svg>
-                        {cartCount > 0 && (
-                            <span className={styles.cartBadge}>{cartCount}</span>
-                        )}
-                    </Link>
 
                     {/* Mobile menu toggle */}
                     <button

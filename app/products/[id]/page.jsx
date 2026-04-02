@@ -9,6 +9,7 @@ import Footer from '@/components/molecules/Footer/Footer'
 import Button from '@/components/atoms/Button/Button'
 import Badge from '@/components/atoms/Badge/Badge'
 import { useCart } from '@/lib/context/CartContext'
+import ImageLightbox from '@/components/molecules/ImageLightbox/ImageLightbox'
 import styles from './page.module.css'
 
 export default function ProductDetailPage() {
@@ -22,6 +23,7 @@ export default function ProductDetailPage() {
     const [selectedVariant, setSelectedVariant] = useState(null)
     const [selectedImage, setSelectedImage] = useState(null)
     const [quantity, setQuantity] = useState(1)
+    const [lightboxOpen, setLightboxOpen] = useState(false)
 
     useEffect(() => {
         loadProduct()
@@ -282,6 +284,8 @@ export default function ProductDetailPage() {
                             className={styles.imageWrapper}
                             onTouchStart={allImages.length > 1 ? handleTouchStart : undefined}
                             onTouchEnd={allImages.length > 1 ? handleTouchEnd : undefined}
+                            onClick={() => displayImage && setLightboxOpen(true)}
+                            style={{ cursor: displayImage ? 'zoom-in' : 'default' }}
                         >
                             {displayImage ? (
                                 <img
@@ -349,6 +353,16 @@ export default function ProductDetailPage() {
                                     </button>
                                 ))}
                             </div>
+                        )}
+
+                        {/* Image Lightbox */}
+                        {lightboxOpen && allImages.length > 0 && (
+                            <ImageLightbox
+                                images={allImages}
+                                currentIndex={currentIndex >= 0 ? currentIndex : 0}
+                                onClose={() => setLightboxOpen(false)}
+                                onIndexChange={(i) => setSelectedImage(allImages[i]?.url)}
+                            />
                         )}
                     </div>
 

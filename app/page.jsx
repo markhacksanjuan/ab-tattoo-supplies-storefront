@@ -1,6 +1,7 @@
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import HomeCategoryGrid from '@/components/molecules/HomeCategoryGrid/HomeCategoryGrid'
+import MobileSearch from '@/components/molecules/MobileSearch/MobileSearch'
 import Button from '@/components/atoms/Button/Button'
 import Link from 'next/link'
 import { Trophy, Truck, MessageCircle, ShieldCheck } from 'lucide-react'
@@ -10,6 +11,7 @@ export default function Home() {
     return (
         <main className={styles.main}>
             <Header />
+            <MobileSearch />
 
             {/* Hero Section */}
             <section className={styles.hero}>

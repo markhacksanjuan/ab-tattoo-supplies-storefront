@@ -39,7 +39,7 @@ export default function RegisterPage() {
 
         try {
             await register(formData)
-            router.push('/account')
+            router.push('/auth/callback')
         } catch (err) {
             setFormError(err.message)
         } finally {
@@ -48,7 +48,7 @@ export default function RegisterPage() {
     }
 
     const handleGoogleSuccess = () => {
-        router.push('/account')
+        router.push('/auth/callback')
     }
 
     const handleGoogleError = (message) => {

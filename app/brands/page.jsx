@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
+import MobileSearch from '@/components/molecules/MobileSearch/MobileSearch'
 import { getCollections } from '@/lib/api/medusa'
 import { Tag } from 'lucide-react'
 import styles from './page.module.css'
@@ -33,6 +34,7 @@ export default function BrandsPage() {
     return (
         <main className={styles.main}>
             <Header />
+            <MobileSearch />
 
             <div className={styles.container}>
                 <div className={styles.header}>
