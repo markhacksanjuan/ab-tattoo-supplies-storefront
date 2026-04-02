@@ -154,19 +154,25 @@ function ProductsContent() {
                         params.type_id = [typeObj.typeId]
                         titleParts.push(typeObj.value)
                     } else if (typeObj) {
+                        // Type exists in navigation but enrichment didn't
+                        // populate typeId (no products have this type yet).
+                        // Try a direct API lookup as a last resort.
                         const allTypes = await getProductTypes()
                         const match = allTypes.find(
                             t => t.value?.toLowerCase().trim() === typeParam.toLowerCase().trim()
                         )
                         if (match) {
                             params.type_id = [match.id]
-                            titleParts.push(typeObj.value)
                         } else {
-                            console.warn(`[products] Type "${typeParam}" not found in API`)
-                            titleParts.push(typeObj.value)
+                            // Type is known but has zero products — force empty
+                            params._emptyResult = true
                         }
+                        titleParts.push(typeObj.value)
                     } else {
+                        // Completely unknown type slug — force empty
                         console.warn(`[products] Unknown type slug: "${typeParam}"`)
+                        params._emptyResult = true
+                        titleParts.push(typeParam)
                     }
                 }
 
@@ -201,6 +207,17 @@ function ProductsContent() {
 
                 // Cache resolved params for subsequent "load more" calls
                 resolvedParams.current = { ...params }
+            }
+
+            // Short-circuit: filters resolved to a known-empty result
+            // (e.g. a type with zero products in the catalogue)
+            if (params._emptyResult || resolvedParams.current?._emptyResult) {
+                setProducts([])
+                setTotalCount(0)
+                setCurrentOffset(0)
+                setLoading(false)
+                setLoadingMore(false)
+                return
             }
             
             let { products: fetchedProducts, count } = await getProducts(params)
