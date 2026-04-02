@@ -7,8 +7,8 @@ import Footer from '@/components/molecules/Footer/Footer'
 import ProductCard from '@/components/molecules/ProductCard/ProductCard'
 import ProductFilters from '@/components/molecules/ProductFilters/ProductFilters'
 import MobileSearch from '@/components/molecules/MobileSearch/MobileSearch'
-import { getProducts, getCollection, getCategory, getProductTypes } from '@/lib/api/medusa'
-import { resolveTypeSlug, enrichWithApiData } from '@/lib/data/navigation'
+import { getProducts, getCollection, getCollections, getCategory, getCategories, getProductTypes } from '@/lib/api/medusa'
+import { PRODUCT_TYPES, resolveTypeSlug, enrichWithApiData } from '@/lib/data/navigation'
 import { PRODUCTS_PER_PAGE } from '@/lib/config'
 import styles from './page.module.css'
 
@@ -58,19 +58,89 @@ function ProductsContent() {
                 // Determine page title parts
                 let titleParts = []
 
-                // Search query — also resolve product-type names
+                // ── Universal search resolution ──────────────────────
+                // Priority: type → category → collection/brand → universal fallback
                 if (searchQuery) {
-                    await enrichWithApiData(getProductTypes)
-                    const matchedType = resolveTypeSlug(searchQuery.toLowerCase().trim())
+                    const normalized = searchQuery.toLowerCase().trim()
+                    let searchResolved = false
 
+                    // 1. Product type match
+                    await enrichWithApiData(getProductTypes)
+                    const matchedType = resolveTypeSlug(normalized)
                     if (matchedType?.typeId) {
-                        // Search term matches a known product type (e.g. "agujas")
-                        // → show all products of that type instead of text search
                         params.type_id = [matchedType.typeId]
                         titleParts.push(matchedType.value)
-                    } else {
-                        // Standard text search via Medusa q parameter
-                        params.q = searchQuery
+                        searchResolved = true
+                    }
+
+                    // 2. Category match (navigation data → API fallback)
+                    if (!searchResolved) {
+                        const allNavCats = PRODUCT_TYPES.flatMap(t => t.categories)
+                        const navCat = allNavCats.find(c =>
+                            c.handle === normalized ||
+                            c.handle.replace(/-/g, ' ') === normalized ||
+                            c.label.toLowerCase() === normalized
+                        )
+                        if (navCat) {
+                            const cat = await getCategory(navCat.handle)
+                            if (cat) {
+                                params.category_id = [cat.id]
+                                titleParts.push(navCat.label)
+                                searchResolved = true
+                            }
+                        }
+                        if (!searchResolved) {
+                            const apiCats = await getCategories()
+                            const catMatch = apiCats.find(c =>
+                                c.name?.toLowerCase() === normalized ||
+                                c.handle === normalized ||
+                                c.handle?.replace(/-/g, ' ') === normalized
+                            )
+                            if (catMatch) {
+                                params.category_id = [catMatch.id]
+                                titleParts.push(catMatch.name)
+                                searchResolved = true
+                            }
+                        }
+                    }
+
+                    // 3. Collection / brand match (navigation data → API fallback)
+                    if (!searchResolved) {
+                        const allNavBrands = PRODUCT_TYPES.flatMap(t => t.brands)
+                        const navBrand = allNavBrands.find(b =>
+                            b.handle === normalized ||
+                            b.handle.replace(/-/g, ' ') === normalized ||
+                            b.label.toLowerCase() === normalized
+                        )
+                        if (navBrand) {
+                            const col = await getCollection(navBrand.handle)
+                            if (col) {
+                                params.collection_id = [col.id]
+                                titleParts.push(navBrand.label)
+                                searchResolved = true
+                            }
+                        }
+                        if (!searchResolved) {
+                            const apiCols = await getCollections()
+                            const colMatch = apiCols.find(c =>
+                                c.title?.toLowerCase() === normalized ||
+                                c.handle === normalized ||
+                                c.handle?.replace(/-/g, ' ') === normalized
+                            )
+                            if (colMatch) {
+                                params.collection_id = [colMatch.id]
+                                titleParts.push(colMatch.title)
+                                searchResolved = true
+                            }
+                        }
+                    }
+
+                    // 4. Universal fallback — fetch all products and filter
+                    //    client-side across ALL metadata (title, description,
+                    //    tags, type, collection, categories, handle)
+                    if (!searchResolved) {
+                        params.limit = 1000
+                        params._universalSearch = normalized
                         titleParts.push(`Resultados: «${searchQuery}»`)
                     }
                 }
@@ -133,15 +203,36 @@ function ProductsContent() {
                 resolvedParams.current = { ...params }
             }
             
-            const { products: medusaProducts, count } = await getProducts(params)
+            let { products: fetchedProducts, count } = await getProducts(params)
+
+            // Universal search: client-side filtering across all metadata
+            const universalQuery = append
+                ? resolvedParams.current._universalSearch
+                : params._universalSearch
+
+            if (universalQuery) {
+                fetchedProducts = fetchedProducts.filter(p => {
+                    const haystack = [
+                        p.title,
+                        p.description,
+                        p.handle,
+                        p.type?.value,
+                        p.collection?.title,
+                        ...(p.categories?.map(c => c.name) || []),
+                        ...(p.tags?.map(t => t.value) || []),
+                    ].filter(Boolean).join(' ').toLowerCase()
+                    return haystack.includes(universalQuery)
+                })
+                count = fetchedProducts.length
+            }
 
             if (append) {
-                setProducts(prev => [...prev, ...medusaProducts])
+                setProducts(prev => [...prev, ...fetchedProducts])
             } else {
-                setProducts(medusaProducts)
+                setProducts(fetchedProducts)
                 setTotalCount(count)
             }
-            setCurrentOffset(offset + medusaProducts.length)
+            setCurrentOffset(offset + fetchedProducts.length)
         } catch (err) {
             console.error('Error loading products:', err)
             setError('Error cargando productos. Por favor, inténtalo de nuevo más tarde.')
