@@ -19,6 +19,7 @@ export default function LoginPage() {
         password: ''
     })
     const [loading, setLoading] = useState(false)
+    const [googleLoading, setGoogleLoading] = useState(false)
     const [formError, setFormError] = useState('')
 
     useEffect(() => {
@@ -48,11 +49,35 @@ export default function LoginPage() {
     }
 
     const handleGoogleSuccess = () => {
-        // Redirect handled by useEffect watching user state
+        // Auth succeeded — immediately redirect to callback page
+        router.push('/auth/callback')
     }
 
     const handleGoogleError = (message) => {
+        setGoogleLoading(false)
         setFormError(message)
+    }
+
+    // Show branded loading overlay while Google auth is processing
+    if (googleLoading || (user && !formError)) {
+        return (
+            <main className={styles.main}>
+                <Header />
+                <div className={styles.container}>
+                    <div className={styles.formWrapper}>
+                        <div className={styles.authLoading}>
+                            <div className={styles.authLogo}>
+                                <span className={styles.authLogoText}>AB TATTOO</span>
+                                <span className={styles.authLogoAccent}>SUPPLIES</span>
+                            </div>
+                            <div className={styles.authSpinner} />
+                            <p className={styles.authMessage}>Verificando tu cuenta…</p>
+                        </div>
+                    </div>
+                </div>
+                <Footer />
+            </main>
+        )
     }
 
     return (
@@ -65,7 +90,7 @@ export default function LoginPage() {
                     <p className={styles.subtitle}>Inicia sesión en tu cuenta profesional</p>
 
                     {/* Google Sign-In */}
-                    <div className={styles.socialAuth}>
+                    <div className={styles.socialAuth} onClick={() => setGoogleLoading(true)}>
                         <GoogleButton
                             onSuccess={handleGoogleSuccess}
                             onError={handleGoogleError}

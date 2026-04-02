@@ -58,10 +58,21 @@ function ProductsContent() {
                 // Determine page title parts
                 let titleParts = []
 
-                // Search query
+                // Search query — also resolve product-type names
                 if (searchQuery) {
-                    params.q = searchQuery
-                    titleParts.push(`Resultados: «${searchQuery}»`)
+                    await enrichWithApiData(getProductTypes)
+                    const matchedType = resolveTypeSlug(searchQuery.toLowerCase().trim())
+
+                    if (matchedType?.typeId) {
+                        // Search term matches a known product type (e.g. "agujas")
+                        // → show all products of that type instead of text search
+                        params.type_id = [matchedType.typeId]
+                        titleParts.push(matchedType.value)
+                    } else {
+                        // Standard text search via Medusa q parameter
+                        params.q = searchQuery
+                        titleParts.push(`Resultados: «${searchQuery}»`)
+                    }
                 }
                 
                 // Type filter — resolve slug to Medusa UUID via navigation map

@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import styles from './ImageLightbox.module.css'
 
 /**
  * Fullscreen lightbox overlay for product image gallery.
+ * Uses createPortal to render at document.body level, avoiding
+ * stacking-context issues with sticky/fixed parent elements.
  *
  * @param {{ images: { url: string, label: string }[], currentIndex: number, onClose: () => void, onIndexChange: (i: number) => void }} props
  */
@@ -61,7 +64,7 @@ export default function ImageLightbox({ images, currentIndex, onClose, onIndexCh
 
     const currentImage = images[currentIndex]
 
-    return (
+    return createPortal(
         <div className={styles.overlay} onClick={onClose}>
             <div
                 className={styles.content}
@@ -106,6 +109,7 @@ export default function ImageLightbox({ images, currentIndex, onClose, onIndexCh
                     </div>
                 </>
             )}
-        </div>
+        </div>,
+        document.body
     )
 }

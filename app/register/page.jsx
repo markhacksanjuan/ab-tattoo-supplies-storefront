@@ -24,6 +24,7 @@ export default function RegisterPage() {
         country: ''
     })
     const [loading, setLoading] = useState(false)
+    const [googleLoading, setGoogleLoading] = useState(false)
     const [formError, setFormError] = useState('')
 
     const handleChange = (e) => {
@@ -52,7 +53,30 @@ export default function RegisterPage() {
     }
 
     const handleGoogleError = (message) => {
+        setGoogleLoading(false)
         setFormError(message)
+    }
+
+    // Show branded loading overlay while Google auth is processing
+    if (googleLoading) {
+        return (
+            <main className={styles.main}>
+                <Header />
+                <div className={styles.container}>
+                    <div className={styles.formWrapper}>
+                        <div className={styles.authLoading}>
+                            <div className={styles.authLogo}>
+                                <span className={styles.authLogoText}>AB TATTOO</span>
+                                <span className={styles.authLogoAccent}>SUPPLIES</span>
+                            </div>
+                            <div className={styles.authSpinner} />
+                            <p className={styles.authMessage}>Creando tu cuenta…</p>
+                        </div>
+                    </div>
+                </div>
+                <Footer />
+            </main>
+        )
     }
 
     return (
@@ -65,7 +89,7 @@ export default function RegisterPage() {
                     <p className={styles.subtitle}>Únete a nuestra red de artistas tatuadores profesionales</p>
 
                     {/* Google Sign-Up */}
-                    <div className={styles.socialAuth}>
+                    <div className={styles.socialAuth} onClick={() => setGoogleLoading(true)}>
                         <GoogleButton
                             onSuccess={handleGoogleSuccess}
                             onError={handleGoogleError}
