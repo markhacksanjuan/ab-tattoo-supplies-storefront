@@ -20,8 +20,13 @@
     align-items: center;
     justify-content: center;
     cursor: default;
-    touch-action: pan-y;
+    touch-action: none;          /* we handle all gestures manually */
     user-select: none;
+    overflow: hidden;
+}
+
+.contentZoomed {
+    cursor: grab;
 }
 
 .image {
@@ -30,6 +35,8 @@
     object-fit: contain;
     border-radius: var(--radius-md);
     animation: zoomIn 0.25s ease;
+    transform-origin: center center;
+    will-change: transform;
 }
 
 /* Close button */
