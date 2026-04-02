@@ -71,11 +71,43 @@ export default function ImageLightbox({ images, currentIndex, onClose, onIndexCh
         return () => window.removeEventListener('keydown', handleKeyDown)
     })
 
-    // Lock body scroll while open
+    // Lock body scroll while open (iOS-safe)
     useEffect(() => {
-        const prev = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
-        return () => { document.body.style.overflow = prev }
+        const scrollY = window.scrollY
+        const body = document.body
+        const html = document.documentElement
+
+        // Save current styles
+        const prevBodyOverflow = body.style.overflow
+        const prevBodyPosition = body.style.position
+        const prevBodyTop = body.style.top
+        const prevBodyWidth = body.style.width
+        const prevHtmlOverflow = html.style.overflow
+
+        // Lock scroll
+        body.style.overflow = 'hidden'
+        body.style.position = 'fixed'
+        body.style.top = `-${scrollY}px`
+        body.style.width = '100%'
+        html.style.overflow = 'hidden'
+
+        // Block touchmove on overlay to prevent iOS rubber-band scroll
+        const blockScroll = (e) => {
+            // Allow touch events inside the content area (for pinch/pan)
+            if (contentRef.current?.contains(e.target)) return
+            e.preventDefault()
+        }
+        document.addEventListener('touchmove', blockScroll, { passive: false })
+
+        return () => {
+            document.removeEventListener('touchmove', blockScroll)
+            body.style.overflow = prevBodyOverflow
+            body.style.position = prevBodyPosition
+            body.style.top = prevBodyTop
+            body.style.width = prevBodyWidth
+            html.style.overflow = prevHtmlOverflow
+            window.scrollTo(0, scrollY)
+        }
     }, [])
 
     const goToPrev = useCallback(() => {
