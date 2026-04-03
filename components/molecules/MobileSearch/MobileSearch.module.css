@@ -177,6 +177,11 @@
     }
 }
 
+/* Hide floating button when the burger menu is open */
+:global(body[data-mobile-menu-open]) .floatingBtn {
+    display: none !important;
+}
+
 @media (max-width: 480px) {
     .floatingBtn {
         right: var(--spacing-sm);

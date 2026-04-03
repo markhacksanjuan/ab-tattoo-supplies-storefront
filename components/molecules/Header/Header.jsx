@@ -49,12 +49,14 @@ export default function Header() {
             html.style.position = 'fixed'
             html.style.width = '100%'
             html.style.height = '100%'
+            body.dataset.mobileMenuOpen = 'true'
         } else {
             html.style.overflow = ''
             body.style.overflow = ''
             html.style.position = ''
             html.style.width = ''
             html.style.height = ''
+            delete body.dataset.mobileMenuOpen
         }
         return () => {
             html.style.overflow = ''
@@ -62,6 +64,7 @@ export default function Header() {
             html.style.position = ''
             html.style.width = ''
             html.style.height = ''
+            delete body.dataset.mobileMenuOpen
         }
     }, [mobileMenuOpen])
 
