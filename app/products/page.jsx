@@ -291,11 +291,29 @@ function ProductsContent() {
         return () => observer.disconnect()
     }, [])
 
+    // Signal to MobileSearch that floating filters are open (hides the search FAB)
+    useEffect(() => {
+        if (floatingPanelOpen) {
+            document.body.dataset.mobileFiltersOpen = ''
+        } else {
+            delete document.body.dataset.mobileFiltersOpen
+        }
+        return () => { delete document.body.dataset.mobileFiltersOpen }
+    }, [floatingPanelOpen])
+
     // Close the floating panel when a category/collection/search changes
     // (selecting a type keeps it open so the user can pick a category)
     useEffect(() => {
         setFloatingPanelOpen(false)
     }, [categoryHandle, collectionHandle, searchQuery])
+
+    // Auto-reopen the floating panel when a type is selected (to show categories)
+    // — only when the sidebar is scrolled out of view
+    useEffect(() => {
+        if (typeParam && !categoryHandle && showFloatingFilter) {
+            setFloatingPanelOpen(true)
+        }
+    }, [typeParam, showFloatingFilter])
 
     const activeFilterCount = [typeParam, categoryHandle, collectionHandle].filter(Boolean).length
 
