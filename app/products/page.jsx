@@ -307,7 +307,7 @@ function ProductsContent() {
         <div className={styles.layout}>
             <div ref={filtersRef}>
                 <Suspense fallback={<div className={styles.filtersSkeleton} />}>
-                    <ProductFilters disableAutoOpen={showFloatingFilter} />
+                    <ProductFilters />
                 </Suspense>
             </div>
 

@@ -25,7 +25,7 @@ function getViewAllLabel(typeName) {
     return `Ver todo el ${typeName}`
 }
 
-export default function ProductFilters({ onFiltersChange, onApply, floating = false, disableAutoOpen = false }) {
+export default function ProductFilters({ onFiltersChange, onApply, floating = false }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     
@@ -62,15 +62,6 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
         }
         return () => { if (!floating) delete document.body.dataset.mobileFiltersOpen }
     }, [mobileOpen, floating])
-
-    // Auto-open filters on mobile when a type is selected (to show categories)
-    // — disabled for floating instance and when floating panel is active
-    useEffect(() => {
-        if (floating || disableAutoOpen) return
-        if (currentType && !currentCategory) {
-            setMobileOpen(true)
-        }
-    }, [currentType, floating, disableAutoOpen])
 
     useEffect(() => {
         loadFilters()
@@ -169,6 +160,8 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
         if (key === 'type') {
             params.delete('category')
             params.delete('collection')
+            // Auto-open sidebar on mobile to reveal categories
+            if (value) setMobileOpen(true)
         }
         
         router.push(`/products?${params.toString()}`)
