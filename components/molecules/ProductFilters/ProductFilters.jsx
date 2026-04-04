@@ -25,7 +25,7 @@ function getViewAllLabel(typeName) {
     return `Ver todo el ${typeName}`
 }
 
-export default function ProductFilters({ onFiltersChange, floating = false, disableAutoOpen = false }) {
+export default function ProductFilters({ onFiltersChange, onApply, floating = false, disableAutoOpen = false }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     
@@ -40,6 +40,16 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
     const currentCollection = searchParams.get('collection') || ''
     const currentCategory = searchParams.get('category') || ''
     const currentType = searchParams.get('type') || ''
+
+    // Pending state for floating mode (selections applied only when "Aplicar" is clicked)
+    const [pendingType, setPendingType] = useState(currentType)
+    const [pendingCategory, setPendingCategory] = useState(currentCategory)
+    const [pendingCollection, setPendingCollection] = useState(currentCollection)
+
+    // Effective values: pending state in floating mode, URL state in sidebar mode
+    const effectiveType = floating ? pendingType : currentType
+    const effectiveCategory = floating ? pendingCategory : currentCategory
+    const effectiveCollection = floating ? pendingCollection : currentCollection
 
     // Signal to MobileSearch that mobile filters are open (hides the search FAB)
     // — only for sidebar instance; floating panel manages this in page.jsx
@@ -96,19 +106,19 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
     const [categoryBrandHandles, setCategoryBrandHandles] = useState(null)
 
     useEffect(() => {
-        if (!currentCategory) {
+        if (!effectiveCategory) {
             setCategoryBrandHandles(null)
             return
         }
 
-        const cat = categories.find(c => c.handle === currentCategory)
+        const cat = categories.find(c => c.handle === effectiveCategory)
         if (!cat) return
 
         let cancelled = false
         const fetchBrands = async () => {
             try {
                 const params = { limit: 500, category_id: [cat.id] }
-                const activeTypeObj = resolveTypeSlug(currentType)
+                const activeTypeObj = resolveTypeSlug(effectiveType)
                 if (activeTypeObj?.typeId) {
                     params.type_id = [activeTypeObj.typeId]
                 }
@@ -129,9 +139,24 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
 
         fetchBrands()
         return () => { cancelled = true }
-    }, [currentCategory, currentType, categories])
+    }, [effectiveCategory, effectiveType, categories])
 
     const updateFilters = (key, value) => {
+        if (floating) {
+            // Floating mode: accumulate selections in pending state
+            if (key === 'type') {
+                setPendingType(value)
+                setPendingCategory('')
+                setPendingCollection('')
+            } else if (key === 'category') {
+                setPendingCategory(value)
+            } else if (key === 'collection') {
+                setPendingCollection(value)
+            }
+            return
+        }
+
+        // Sidebar mode: apply immediately to URL
         const params = new URLSearchParams(searchParams.toString())
         
         if (value) {
@@ -157,19 +182,40 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
         }
     }
 
+    /** Apply pending filters to URL and close the floating panel */
+    const applyFilters = () => {
+        const params = new URLSearchParams()
+        if (pendingType) params.set('type', pendingType)
+        if (pendingCategory) params.set('category', pendingCategory)
+        if (pendingCollection) params.set('collection', pendingCollection)
+        // Preserve search query if present
+        const q = searchParams.get('q')
+        if (q) params.set('q', q)
+
+        const qs = params.toString()
+        router.push(qs ? `/products?${qs}` : '/products')
+        if (onApply) onApply()
+    }
+
     const clearAllFilters = () => {
+        if (floating) {
+            setPendingType('')
+            setPendingCategory('')
+            setPendingCollection('')
+            return
+        }
         router.push('/products')
         if (onFiltersChange) {
             onFiltersChange({ collection: '', category: '', type: '' })
         }
     }
 
-    const hasActiveFilters = currentCollection || currentCategory || currentType
+    const hasActiveFilters = effectiveCollection || effectiveCategory || effectiveType
 
     // Determine which categories and collections to show based on active type
-    const activeType = resolveTypeSlug(currentType)
-    const allowedCategoryHandles = activeType ? getCategoriesForType(currentType) : null
-    const allowedBrandHandles = activeType ? getBrandsForType(currentType) : null
+    const activeType = resolveTypeSlug(effectiveType)
+    const allowedCategoryHandles = activeType ? getCategoriesForType(effectiveType) : null
+    const allowedBrandHandles = activeType ? getBrandsForType(effectiveType) : null
 
     // Filter API data to only show relevant items
     const filteredCategories = allowedCategoryHandles
@@ -186,7 +232,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
         filteredCollections = filteredCollections.filter(col => categoryBrandHandles.includes(col.handle))
     }
 
-    const activeFilterCount = [currentType, currentCategory, currentCollection].filter(Boolean).length
+    const activeFilterCount = [effectiveType, effectiveCategory, effectiveCollection].filter(Boolean).length
 
     if (loading) {
         return (
@@ -254,7 +300,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                 <ul className={styles.filterList}>
                     <li>
                         <button
-                            className={`${styles.filterItem} ${!currentType ? styles.active : ''}`}
+                            className={`${styles.filterItem} ${!effectiveType ? styles.active : ''}`}
                             onClick={() => updateFilters('type', '')}
                         >
                             Todos los tipos
@@ -263,7 +309,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                     {PRODUCT_TYPES.map((type) => (
                         <li key={type.slug}>
                             <button
-                                className={`${styles.filterItem} ${currentType === type.slug ? styles.active : ''}`}
+                                className={`${styles.filterItem} ${effectiveType === type.slug ? styles.active : ''}`}
                                 onClick={() => updateFilters('type', type.slug)}
                             >
                                 {type.value}
@@ -282,7 +328,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                     <ul className={styles.filterList}>
                         <li>
                             <button
-                                className={`${styles.filterItem} ${!currentCategory ? styles.active : ''}`}
+                                className={`${styles.filterItem} ${!effectiveCategory ? styles.active : ''}`}
                                 onClick={() => updateFilters('category', '')}
                             >
                                 {getViewAllLabel(activeType.value)}
@@ -291,7 +337,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                         {filteredCategories.map((category) => (
                             <li key={category.id}>
                                 <button
-                                    className={`${styles.filterItem} ${currentCategory === category.handle ? styles.active : ''}`}
+                                    className={`${styles.filterItem} ${effectiveCategory === category.handle ? styles.active : ''}`}
                                     onClick={() => updateFilters('category', category.handle)}
                                 >
                                     {category.name}
@@ -311,7 +357,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                     <ul className={styles.filterList}>
                         <li>
                             <button
-                                className={`${styles.filterItem} ${!currentCollection ? styles.active : ''}`}
+                                className={`${styles.filterItem} ${!effectiveCollection ? styles.active : ''}`}
                                 onClick={() => updateFilters('collection', '')}
                             >
                                 Todas las marcas
@@ -320,7 +366,7 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                         {filteredCollections.map((collection) => (
                             <li key={collection.id}>
                                 <button
-                                    className={`${styles.filterItem} ${currentCollection === collection.handle ? styles.active : ''}`}
+                                    className={`${styles.filterItem} ${effectiveCollection === collection.handle ? styles.active : ''}`}
                                     onClick={() => updateFilters('collection', collection.handle)}
                                 >
                                     {collection.title}
@@ -329,6 +375,15 @@ export default function ProductFilters({ onFiltersChange, floating = false, disa
                         ))}
                     </ul>
                 </div>
+            )}
+            {/* Apply button — only in floating mode */}
+            {floating && (
+                <button className={styles.applyButton} onClick={applyFilters}>
+                    Aplicar filtros
+                    {activeFilterCount > 0 && (
+                        <span className={styles.applyBadge}>{activeFilterCount}</span>
+                    )}
+                </button>
             )}
             </div>{/* end filterBodyInner */}
             </div>{/* end filterBody */}

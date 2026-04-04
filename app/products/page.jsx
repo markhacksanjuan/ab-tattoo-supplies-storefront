@@ -274,7 +274,6 @@ function ProductsContent() {
     const filtersRef = useRef(null)
     const [showFloatingFilter, setShowFloatingFilter] = useState(false)
     const [floatingPanelOpen, setFloatingPanelOpen] = useState(false)
-    const skipCloseRef = useRef(false)
 
     useEffect(() => {
         const el = filtersRef.current
@@ -301,24 +300,6 @@ function ProductsContent() {
         }
         return () => { delete document.body.dataset.mobileFiltersOpen }
     }, [floatingPanelOpen])
-
-    // Close the floating panel when a category/collection/search changes
-    // (selecting a type keeps it open so the user can pick a category)
-    useEffect(() => {
-        if (skipCloseRef.current) {
-            skipCloseRef.current = false
-            return
-        }
-        setFloatingPanelOpen(false)
-    }, [categoryHandle, collectionHandle, searchQuery])
-
-    // Auto-reopen the floating panel when a type is selected (to show categories)
-    // — only when the sidebar is scrolled out of view
-    useEffect(() => {
-        if (typeParam && !categoryHandle && showFloatingFilter) {
-            setFloatingPanelOpen(true)
-        }
-    }, [typeParam, showFloatingFilter])
 
     const activeFilterCount = [typeParam, categoryHandle, collectionHandle].filter(Boolean).length
 
@@ -361,13 +342,7 @@ function ProductsContent() {
                             />
                             <div className={styles.floatingPanel}>
                                 <Suspense fallback={<div style={{ padding: '1rem', color: 'var(--color-white-muted)' }}>Cargando filtros...</div>}>
-                                    <ProductFilters floating onFiltersChange={(_filters, key) => {
-                                        if (key === 'type') {
-                                            skipCloseRef.current = true
-                                        } else {
-                                            setFloatingPanelOpen(false)
-                                        }
-                                    }} />
+                                    <ProductFilters floating onApply={() => setFloatingPanelOpen(false)} />
                                 </Suspense>
                             </div>
                         </>
