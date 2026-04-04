@@ -274,6 +274,7 @@ function ProductsContent() {
     const filtersRef = useRef(null)
     const [showFloatingFilter, setShowFloatingFilter] = useState(false)
     const [floatingPanelOpen, setFloatingPanelOpen] = useState(false)
+    const skipCloseRef = useRef(false)
 
     useEffect(() => {
         const el = filtersRef.current
@@ -304,6 +305,10 @@ function ProductsContent() {
     // Close the floating panel when a category/collection/search changes
     // (selecting a type keeps it open so the user can pick a category)
     useEffect(() => {
+        if (skipCloseRef.current) {
+            skipCloseRef.current = false
+            return
+        }
         setFloatingPanelOpen(false)
     }, [categoryHandle, collectionHandle, searchQuery])
 
@@ -321,7 +326,7 @@ function ProductsContent() {
         <div className={styles.layout}>
             <div ref={filtersRef}>
                 <Suspense fallback={<div className={styles.filtersSkeleton} />}>
-                    <ProductFilters />
+                    <ProductFilters disableAutoOpen={showFloatingFilter} />
                 </Suspense>
             </div>
 
@@ -357,7 +362,11 @@ function ProductsContent() {
                             <div className={styles.floatingPanel}>
                                 <Suspense fallback={<div style={{ padding: '1rem', color: 'var(--color-white-muted)' }}>Cargando filtros...</div>}>
                                     <ProductFilters floating onFiltersChange={(_filters, key) => {
-                                        if (key !== 'type') setFloatingPanelOpen(false)
+                                        if (key === 'type') {
+                                            skipCloseRef.current = true
+                                        } else {
+                                            setFloatingPanelOpen(false)
+                                        }
                                     }} />
                                 </Suspense>
                             </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getCollections, getCategories, getProductTypes } from '@/lib/api/medusa'
+import { getCollections, getCategories, getProductTypes, getProducts } from '@/lib/api/medusa'
 import {
     PRODUCT_TYPES,
     resolveTypeSlug,
@@ -25,7 +25,7 @@ function getViewAllLabel(typeName) {
     return `Ver todo el ${typeName}`
 }
 
-export default function ProductFilters({ onFiltersChange, floating = false }) {
+export default function ProductFilters({ onFiltersChange, floating = false, disableAutoOpen = false }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     
@@ -42,21 +42,25 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
     const currentType = searchParams.get('type') || ''
 
     // Signal to MobileSearch that mobile filters are open (hides the search FAB)
+    // — only for sidebar instance; floating panel manages this in page.jsx
     useEffect(() => {
+        if (floating) return
         if (mobileOpen) {
             document.body.dataset.mobileFiltersOpen = ''
         } else {
             delete document.body.dataset.mobileFiltersOpen
         }
-        return () => { delete document.body.dataset.mobileFiltersOpen }
-    }, [mobileOpen])
+        return () => { if (!floating) delete document.body.dataset.mobileFiltersOpen }
+    }, [mobileOpen, floating])
 
     // Auto-open filters on mobile when a type is selected (to show categories)
+    // — disabled for floating instance and when floating panel is active
     useEffect(() => {
+        if (floating || disableAutoOpen) return
         if (currentType && !currentCategory) {
             setMobileOpen(true)
         }
-    }, [currentType])
+    }, [currentType, floating, disableAutoOpen])
 
     useEffect(() => {
         loadFilters()
@@ -87,6 +91,45 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
             setLoading(false)
         }
     }
+
+    // Fetch brands (collections) available for the currently selected category
+    const [categoryBrandHandles, setCategoryBrandHandles] = useState(null)
+
+    useEffect(() => {
+        if (!currentCategory) {
+            setCategoryBrandHandles(null)
+            return
+        }
+
+        const cat = categories.find(c => c.handle === currentCategory)
+        if (!cat) return
+
+        let cancelled = false
+        const fetchBrands = async () => {
+            try {
+                const params = { limit: 500, category_id: [cat.id] }
+                const activeTypeObj = resolveTypeSlug(currentType)
+                if (activeTypeObj?.typeId) {
+                    params.type_id = [activeTypeObj.typeId]
+                }
+                const { products } = await getProducts(params)
+                if (cancelled) return
+
+                const handles = [...new Set(
+                    products
+                        .filter(p => p.collection?.handle)
+                        .map(p => p.collection.handle)
+                )]
+                setCategoryBrandHandles(handles)
+            } catch (error) {
+                console.error('Error fetching brands for category:', error)
+                if (!cancelled) setCategoryBrandHandles(null)
+            }
+        }
+
+        fetchBrands()
+        return () => { cancelled = true }
+    }, [currentCategory, currentType, categories])
 
     const updateFilters = (key, value) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -133,9 +176,15 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
         ? categories.filter(cat => allowedCategoryHandles.includes(cat.handle))
         : categories.filter(cat => !cat.parent_category_id && !cat.parent_category)
 
-    const filteredCollections = allowedBrandHandles
+    // Filter brands: first by type, then by category if one is selected
+    let filteredCollections = allowedBrandHandles
         ? collections.filter(col => allowedBrandHandles.includes(col.handle))
         : collections
+
+    // When a category is selected, narrow to only brands with products in that category
+    if (categoryBrandHandles !== null) {
+        filteredCollections = filteredCollections.filter(col => categoryBrandHandles.includes(col.handle))
+    }
 
     const activeFilterCount = [currentType, currentCategory, currentCollection].filter(Boolean).length
 
