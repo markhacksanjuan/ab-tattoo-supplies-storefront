@@ -12,6 +12,19 @@ import {
 } from '@/lib/data/navigation'
 import styles from './ProductFilters.module.css'
 
+/**
+ * Helper: gendered Spanish label for "view all" within a type.
+ * "Agujas" → "Ver todas las Agujas"
+ * "Tintas" → "Ver todas las Tintas"
+ * "Material" → "Ver todo el Material"
+ */
+function getViewAllLabel(typeName) {
+    const lower = typeName.toLowerCase()
+    if (lower.endsWith('as')) return `Ver todas las ${typeName}`
+    if (lower.endsWith('s')) return `Ver todos los ${typeName}`
+    return `Ver todo el ${typeName}`
+}
+
 export default function ProductFilters({ onFiltersChange, floating = false }) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -27,6 +40,23 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
     const currentCollection = searchParams.get('collection') || ''
     const currentCategory = searchParams.get('category') || ''
     const currentType = searchParams.get('type') || ''
+
+    // Signal to MobileSearch that mobile filters are open (hides the search FAB)
+    useEffect(() => {
+        if (mobileOpen) {
+            document.body.dataset.mobileFiltersOpen = ''
+        } else {
+            delete document.body.dataset.mobileFiltersOpen
+        }
+        return () => { delete document.body.dataset.mobileFiltersOpen }
+    }, [mobileOpen])
+
+    // Auto-open filters on mobile when a type is selected (to show categories)
+    useEffect(() => {
+        if (currentType && !currentCategory) {
+            setMobileOpen(true)
+        }
+    }, [currentType])
 
     useEffect(() => {
         loadFilters()
@@ -80,7 +110,7 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
                 collection: key === 'collection' ? value : (key === 'type' ? '' : currentCollection),
                 category: key === 'category' ? value : (key === 'type' ? '' : currentCategory),
                 type: key === 'type' ? value : currentType,
-            })
+            }, key)
         }
     }
 
@@ -194,11 +224,11 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
                 </ul>
             </div>
 
-            {/* Categories Filter — contextual to active type */}
-            {filteredCategories.length > 0 && (
+            {/* Categories Filter — only shown when a type is selected */}
+            {activeType && filteredCategories.length > 0 && (
                 <div className={styles.filterGroup}>
                     <h4 className={styles.filterTitle}>
-                        {activeType ? `Categorías de ${activeType.value}` : 'Categorías'}
+                        {`Categorías de ${activeType.value}`}
                     </h4>
                     <ul className={styles.filterList}>
                         <li>
@@ -206,7 +236,7 @@ export default function ProductFilters({ onFiltersChange, floating = false }) {
                                 className={`${styles.filterItem} ${!currentCategory ? styles.active : ''}`}
                                 onClick={() => updateFilters('category', '')}
                             >
-                                Todas las categorías
+                                {getViewAllLabel(activeType.value)}
                             </button>
                         </li>
                         {filteredCategories.map((category) => (

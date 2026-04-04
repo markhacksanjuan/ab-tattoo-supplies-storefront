@@ -182,6 +182,11 @@
     display: none !important;
 }
 
+/* Hide floating button when mobile filters are open */
+:global(body[data-mobile-filters-open]) .floatingBtn {
+    display: none !important;
+}
+
 @media (max-width: 480px) {
     .floatingBtn {
         right: var(--spacing-sm);

@@ -291,10 +291,11 @@ function ProductsContent() {
         return () => observer.disconnect()
     }, [])
 
-    // Close the floating panel whenever any filter changes (URL navigates)
+    // Close the floating panel when a category/collection/search changes
+    // (selecting a type keeps it open so the user can pick a category)
     useEffect(() => {
         setFloatingPanelOpen(false)
-    }, [typeParam, categoryHandle, collectionHandle, searchQuery])
+    }, [categoryHandle, collectionHandle, searchQuery])
 
     const activeFilterCount = [typeParam, categoryHandle, collectionHandle].filter(Boolean).length
 
@@ -337,7 +338,9 @@ function ProductsContent() {
                             />
                             <div className={styles.floatingPanel}>
                                 <Suspense fallback={<div style={{ padding: '1rem', color: 'var(--color-white-muted)' }}>Cargando filtros...</div>}>
-                                    <ProductFilters floating onFiltersChange={() => setFloatingPanelOpen(false)} />
+                                    <ProductFilters floating onFiltersChange={(_filters, key) => {
+                                        if (key !== 'type') setFloatingPanelOpen(false)
+                                    }} />
                                 </Suspense>
                             </div>
                         </>
