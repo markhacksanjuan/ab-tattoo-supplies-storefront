@@ -213,7 +213,7 @@ export default function ProductDetailPage() {
         } else {
             // No exact match — find the best variant that has the newly
             // selected value and adjust the other options to match
-            const best = findBestVariant(product, newOptions)
+            const best = findBestVariant(product, newOptions, optionId)
             if (best?.options) {
                 const adjusted = {}
                 best.options.forEach(opt => {
