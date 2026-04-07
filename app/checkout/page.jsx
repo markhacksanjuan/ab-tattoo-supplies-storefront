@@ -25,7 +25,16 @@ import Button from '@/components/atoms/Button/Button'
 import Card from '@/components/atoms/Card/Card'
 import styles from './page.module.css'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY || '')
+// Validate Stripe publishable key
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_KEY || ''
+if (!stripeKey || stripeKey === 'pk_test_your_stripe_publishable_key') {
+    console.warn(
+        '[Checkout] ⚠️ NEXT_PUBLIC_STRIPE_KEY is missing or is a placeholder. ' +
+        'Payment will NOT work. Set a real Stripe publishable key in storefront/.env — ' +
+        'get yours at https://dashboard.stripe.com/test/apikeys'
+    )
+}
+const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null)
 
 // ============================================
 // PAYMENT FORM COMPONENT (Stripe Elements)
@@ -136,6 +145,9 @@ export default function CheckoutPage() {
 
     // Shipping error
     const [shippingError, setShippingError] = useState(null)
+
+    // Payment initialization error
+    const [paymentError, setPaymentError] = useState(null)
 
     // Saved addresses
     const [savedAddresses, setSavedAddresses] = useState([])
@@ -349,16 +361,24 @@ export default function CheckoutPage() {
 
             // 5. Initialize Stripe payment session
             //    Creates payment collection if needed, then creates payment session
+            setPaymentError(null)
             const paymentSession = await initializePaymentSession(cart.id)
             console.log('[Checkout] paymentSession result:', JSON.stringify(paymentSession, null, 2))
 
             const secret = paymentSession?.data?.client_secret
             console.log('[Checkout] client_secret:', secret ? 'found' : 'NOT FOUND')
 
-            if (secret) {
-                setClientSecret(secret)
+            if (!secret) {
+                // Don't advance to step 2 — show error on step 1
+                setShippingError(
+                    'No se pudo inicializar el pago. Esto puede deberse a la configuración de Stripe. ' +
+                    'Si el problema persiste, contacta con soporte.'
+                )
+                setLoading(false)
+                return
             }
 
+            setClientSecret(secret)
             await refreshCart()
             setStep(2)
         } catch (err) {
@@ -752,9 +772,41 @@ export default function CheckoutPage() {
                                                 ← Volver al envío
                                             </button>
                                         </div>
-                                        <p style={{ color: 'var(--color-white-muted)', textAlign: 'center', padding: '2rem 0' }}>
-                                            {loading ? 'Preparando el pago...' : 'No se pudo inicializar el pago. Verifica que Stripe esté configurado.'}
-                                        </p>
+                                        {loading ? (
+                                            <p style={{ color: 'var(--color-white-muted)', textAlign: 'center', padding: '2rem 0' }}>
+                                                Preparando el pago...
+                                            </p>
+                                        ) : (
+                                            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                                <p style={{ color: '#ef4444', marginBottom: '1rem' }}>
+                                                    No se pudo inicializar el pago.
+                                                </p>
+                                                <p style={{ color: 'var(--color-white-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                                                    Esto puede deberse a un problema temporal con la pasarela de pago.
+                                                    Si el problema persiste, contacta con soporte.
+                                                </p>
+                                                <Button
+                                                    variant="outline"
+                                                    size="medium"
+                                                    onClick={async () => {
+                                                        setLoading(true)
+                                                        try {
+                                                            const paymentSession = await initializePaymentSession(cart.id)
+                                                            const secret = paymentSession?.data?.client_secret
+                                                            if (secret) {
+                                                                setClientSecret(secret)
+                                                            }
+                                                        } catch (err) {
+                                                            console.error('Retry payment init failed:', err)
+                                                        } finally {
+                                                            setLoading(false)
+                                                        }
+                                                    }}
+                                                >
+                                                    Reintentar
+                                                </Button>
+                                            </div>
+                                        )}
                                     </Card>
                                 )}
                             </>
