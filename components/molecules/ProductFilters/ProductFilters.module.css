@@ -101,6 +101,28 @@
     font-weight: 500;
 }
 
+/* ── "Ver más / Ver menos" toggle ── */
+.showMoreButton {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: none;
+    border: none;
+    color: var(--color-gold);
+    font-size: var(--font-size-small);
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+
+.showMoreButton:hover {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-gold-dark);
+    text-decoration: underline;
+}
+
 .loading {
     display: flex;
     flex-direction: column;

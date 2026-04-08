@@ -12,6 +12,9 @@ import {
 } from '@/lib/data/navigation'
 import styles from './ProductFilters.module.css'
 
+/** Max items to show before "Ver más" toggle */
+const VISIBLE_LIMIT = 10
+
 /**
  * Helper: gendered Spanish label for "view all" within a type.
  * "Agujas" → "Ver todas las Agujas"
@@ -34,6 +37,8 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
     const [loading, setLoading] = useState(true)
     const [filtersError, setFiltersError] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [expandedCategories, setExpandedCategories] = useState(false)
+    const [expandedBrands, setExpandedBrands] = useState(false)
     const enrichedRef = useRef(false)
     
     // Get current filter values from URL
@@ -225,6 +230,32 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
         filteredCollections = filteredCollections.filter(col => categoryBrandHandles.includes(col.handle))
     }
 
+    // Reset expanded state when the filter context changes
+    const prevTypeRef = useRef(effectiveType)
+    const prevCatRef = useRef(effectiveCategory)
+    useEffect(() => {
+        if (prevTypeRef.current !== effectiveType) {
+            setExpandedCategories(false)
+            setExpandedBrands(false)
+            prevTypeRef.current = effectiveType
+        }
+        if (prevCatRef.current !== effectiveCategory) {
+            setExpandedBrands(false)
+            prevCatRef.current = effectiveCategory
+        }
+    }, [effectiveType, effectiveCategory])
+
+    // Visible subsets (top VISIBLE_LIMIT, rest hidden behind toggle)
+    const visibleCategories = expandedCategories
+        ? filteredCategories
+        : filteredCategories.slice(0, VISIBLE_LIMIT)
+    const hiddenCategoriesCount = filteredCategories.length - VISIBLE_LIMIT
+
+    const visibleCollections = expandedBrands
+        ? filteredCollections
+        : filteredCollections.slice(0, VISIBLE_LIMIT)
+    const hiddenBrandsCount = filteredCollections.length - VISIBLE_LIMIT
+
     const activeFilterCount = [effectiveType, effectiveCategory, effectiveCollection].filter(Boolean).length
 
     if (loading) {
@@ -327,7 +358,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                                 {getViewAllLabel(activeType.value)}
                             </button>
                         </li>
-                        {filteredCategories.map((category) => (
+                        {visibleCategories.map((category) => (
                             <li key={category.id}>
                                 <button
                                     className={`${styles.filterItem} ${effectiveCategory === category.handle ? styles.active : ''}`}
@@ -337,6 +368,18 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                                 </button>
                             </li>
                         ))}
+                        {hiddenCategoriesCount > 0 && (
+                            <li>
+                                <button
+                                    className={styles.showMoreButton}
+                                    onClick={() => setExpandedCategories(prev => !prev)}
+                                >
+                                    {expandedCategories
+                                        ? 'Ver menos'
+                                        : `Ver más (${hiddenCategoriesCount})`}
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </div>
             )}
@@ -356,7 +399,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                                 Todas las marcas
                             </button>
                         </li>
-                        {filteredCollections.map((collection) => (
+                        {visibleCollections.map((collection) => (
                             <li key={collection.id}>
                                 <button
                                     className={`${styles.filterItem} ${effectiveCollection === collection.handle ? styles.active : ''}`}
@@ -366,6 +409,18 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                                 </button>
                             </li>
                         ))}
+                        {hiddenBrandsCount > 0 && (
+                            <li>
+                                <button
+                                    className={styles.showMoreButton}
+                                    onClick={() => setExpandedBrands(prev => !prev)}
+                                >
+                                    {expandedBrands
+                                        ? 'Ver menos'
+                                        : `Ver más (${hiddenBrandsCount})`}
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </div>
             )}
