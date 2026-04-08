@@ -80,6 +80,8 @@
     position: sticky;
     top: 100px;
     height: fit-content;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .imageWrapper {
@@ -174,6 +176,8 @@
     margin-top: var(--spacing-md);
     overflow-x: auto;
     padding-bottom: var(--spacing-xs);
+    min-width: 0;
+    max-width: 100%;
 }
 
 .thumbnailStrip::-webkit-scrollbar {
