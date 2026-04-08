@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getCollections, getCategories, getProductTypes, getProducts } from '@/lib/api/medusa'
+import { getRankedCollections, getRankedCategories, getProductTypes, getProducts } from '@/lib/api/medusa'
 import {
     PRODUCT_TYPES,
     resolveTypeSlug,
@@ -84,8 +84,8 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
         setFiltersError(false)
         try {
             const [collectionsData, categoriesData] = await Promise.all([
-                getCollections().catch(() => []),
-                getCategories().catch(() => []),
+                getRankedCollections().catch(() => []),
+                getRankedCategories().catch(() => []),
             ])
             
             setCollections(collectionsData || [])
