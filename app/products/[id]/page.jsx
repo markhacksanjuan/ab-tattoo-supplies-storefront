@@ -242,41 +242,51 @@ export default function ProductDetailPage() {
             <Header />
 
             <div className={styles.container}>
-                <div className={styles.breadcrumb}>
+                <nav className={styles.breadcrumb} aria-label="Breadcrumb">
                     <a href="/products">Productos</a>
+                    {/* Tipo */}
                     {product.type?.value && (() => {
                         const typeObj = resolveTypeSlug(product.type.value)
                         return typeObj ? (
                             <>
-                                <span>/</span>
+                                <span className={styles.breadcrumbSep}>/</span>
                                 <a href={`/products?type=${typeObj.slug}`}>{typeObj.value}</a>
                             </>
                         ) : null
                     })()}
-                    {product.categories?.[0]?.name && (() => {
-                        const cat = product.categories[0]
+                    {/* Categoría — elegir la más específica (hija), omitir si duplica el tipo */}
+                    {(() => {
+                        if (!product.categories?.length) return null
+                        // Preferir la categoría hija (la que tiene parent)
+                        const childCat = product.categories.find(
+                            c => c.parent_category_id || c.parent_category
+                        )
+                        const cat = childCat || product.categories[0]
+                        // Omitir si el nombre coincide con el tipo (evita "Tintas / Tintas")
+                        if (cat.name?.toLowerCase().trim() === product.type?.value?.toLowerCase().trim()) return null
                         const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
                         const typeSlug = typeObj?.slug || ''
                         return (
                             <>
-                                <span>/</span>
+                                <span className={styles.breadcrumbSep}>/</span>
                                 <a href={`/products?type=${typeSlug}&category=${cat.handle}`}>{cat.name}</a>
                             </>
                         )
                     })()}
+                    {/* Marca (colección) — siempre visible */}
                     {product.collection?.title && (() => {
                         const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
                         const typeSlug = typeObj?.slug || ''
                         return (
                             <>
-                                <span>/</span>
+                                <span className={styles.breadcrumbSep}>/</span>
                                 <a href={`/products?type=${typeSlug}&collection=${product.collection.handle}`}>{product.collection.title}</a>
                             </>
                         )
                     })()}
-                    <span>/</span>
-                    <span>{product.title}</span>
-                </div>
+                    <span className={styles.breadcrumbSep}>/</span>
+                    <span className={styles.breadcrumbCurrent}>{product.title}</span>
+                </nav>
 
                 <div className={styles.content}>
                     <div className={styles.imageSection}>
