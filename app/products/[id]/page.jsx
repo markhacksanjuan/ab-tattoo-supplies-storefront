@@ -312,7 +312,7 @@ export default function ProductDetailPage() {
                                 <>
                                     <button
                                         className={`${styles.navArrow} ${styles.navArrowLeft}`}
-                                        onClick={goPrev}
+                                        onClick={(e) => { e.stopPropagation(); goPrev() }}
                                         aria-label="Imagen anterior"
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -321,7 +321,7 @@ export default function ProductDetailPage() {
                                     </button>
                                     <button
                                         className={`${styles.navArrow} ${styles.navArrowRight}`}
-                                        onClick={goNext}
+                                        onClick={(e) => { e.stopPropagation(); goNext() }}
                                         aria-label="Imagen siguiente"
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
