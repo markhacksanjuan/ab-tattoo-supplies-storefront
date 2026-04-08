@@ -237,6 +237,14 @@ function ProductsContent() {
                         p.collection?.title,
                         ...(p.categories?.map(c => c.name) || []),
                         ...(p.tags?.map(t => t.value) || []),
+                        // ── Variant data (title, sku) ──
+                        ...(p.variants?.map(v => v.title) || []),
+                        ...(p.variants?.map(v => v.sku) || []),
+                        // ── Product options & values (e.g. Color → Orange) ──
+                        ...(p.options?.map(o => o.title) || []),
+                        ...(p.options?.flatMap(o =>
+                            o.values?.map(v => v.value) || []
+                        ) || []),
                     ].filter(Boolean).join(' ').toLowerCase()
                     return haystack.includes(universalQuery)
                 })
