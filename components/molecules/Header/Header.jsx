@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useCart } from '@/lib/context/CartContext'
-import { PRODUCT_TYPES, enrichWithApiData } from '@/lib/data/navigation'
-import { getProductTypes } from '@/lib/api/medusa'
+import { useNavigation } from '@/lib/context/NavigationContext'
 import { SEARCH_MIN_LENGTH } from '@/lib/config'
 import styles from './Header.module.css'
 
@@ -18,15 +17,8 @@ export default function Header() {
     const [mobileOpenSections, setMobileOpenSections] = useState({})
     const { user } = useAuth()
     const { cartCount } = useCart()
+    const { navTree, loading: navLoading } = useNavigation()
     const dropdownTimeout = useRef(null)
-    const enrichedRef = useRef(false)
-
-    // Enrich type IDs from API in background — no setState, no re-render
-    useEffect(() => {
-        if (enrichedRef.current) return
-        enrichedRef.current = true
-        enrichWithApiData(getProductTypes)
-    }, [])
 
     useEffect(() => {
         const handleScroll = () => {
@@ -104,7 +96,7 @@ export default function Header() {
                         className={styles.dropdownItem}
                         onClick={closeAll}
                     >
-                        Todo {type.value}
+                        Todo {type.name}
                     </Link>
                     <div className={styles.dropdownDivider} />
 
@@ -140,7 +132,7 @@ export default function Header() {
                     className={styles.dropdownItem}
                     onClick={closeAll}
                 >
-                    {getArticlePrefix(type.value)} {type.value}
+                    {getArticlePrefix(type.name)} {type.name}
                 </Link>
                 <div className={styles.dropdownDivider} />
                 {type.categories.map((cat) => (
@@ -182,13 +174,12 @@ export default function Header() {
                     <span className={styles.logoAccent}>SUPPLIES</span>
                 </Link>
 
-                {/* Navigation — rendered from static PRODUCT_TYPES (no API wait) */}
                 <nav className={`${styles.nav} ${mobileMenuOpen ? styles.navOpen : ''}`}>
                     <Link href="/products" className={styles.navLink} onClick={closeAll}>
                         Todos
                     </Link>
 
-                    {PRODUCT_TYPES.map((type, index) => (
+                    {navTree.map((type, index) => (
                         <div
                             key={type.slug}
                             className={styles.navDropdown}
@@ -208,7 +199,7 @@ export default function Header() {
                                     }
                                 }}
                             >
-                                {type.value}
+                                {type.name}
                                 <svg
                                     className={`${styles.chevron} ${mobileOpenSections[index] ? styles.chevronOpen : ''}`}
                                     width="10"

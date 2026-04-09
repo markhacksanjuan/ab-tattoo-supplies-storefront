@@ -7,13 +7,14 @@ import Footer from '@/components/molecules/Footer/Footer'
 import ProductCard from '@/components/molecules/ProductCard/ProductCard'
 import ProductFilters from '@/components/molecules/ProductFilters/ProductFilters'
 import MobileSearch from '@/components/molecules/MobileSearch/MobileSearch'
-import { getProducts, getCollection, getCollections, getCategory, getCategories, getProductTypes } from '@/lib/api/medusa'
-import { PRODUCT_TYPES, resolveTypeSlug, enrichWithApiData } from '@/lib/data/navigation'
+import { getProducts, getCollection, getCollections, getCategory, getCategories } from '@/lib/api/medusa'
+import { useNavigation } from '@/lib/context/NavigationContext'
 import { PRODUCTS_PER_PAGE } from '@/lib/config'
 import styles from './page.module.css'
 
 function ProductsContent() {
     const searchParams = useSearchParams()
+    const { navTree, resolveType, loading: navLoading } = useNavigation()
     
     // Get filter values from URL — type always uses slugs (e.g. "agujas")
     const collectionHandle = searchParams.get('collection') || ''
@@ -33,6 +34,9 @@ function ProductsContent() {
     const resolvedParams = useRef({})
 
     const loadProducts = useCallback(async (offset = 0, append = false) => {
+        // Wait for navigation context to be ready before resolving filters
+        if (navLoading) return
+
         if (append) {
             setLoadingMore(true)
         } else {
@@ -65,17 +69,16 @@ function ProductsContent() {
                     let searchResolved = false
 
                     // 1. Product type match
-                    await enrichWithApiData(getProductTypes)
-                    const matchedType = resolveTypeSlug(normalized)
+                    const matchedType = resolveType(normalized)
                     if (matchedType?.typeId) {
                         params.type_id = [matchedType.typeId]
-                        titleParts.push(matchedType.value)
+                        titleParts.push(matchedType.name)
                         searchResolved = true
                     }
 
                     // 2. Category match (navigation data → API fallback)
                     if (!searchResolved) {
-                        const allNavCats = PRODUCT_TYPES.flatMap(t => t.categories)
+                        const allNavCats = navTree.flatMap(t => t.categories)
                         const navCat = allNavCats.find(c =>
                             c.handle === normalized ||
                             c.handle.replace(/-/g, ' ') === normalized ||
@@ -106,7 +109,7 @@ function ProductsContent() {
 
                     // 3. Collection / brand match (navigation data → API fallback)
                     if (!searchResolved) {
-                        const allNavBrands = PRODUCT_TYPES.flatMap(t => t.brands)
+                        const allNavBrands = navTree.flatMap(t => t.brands)
                         const navBrand = allNavBrands.find(b =>
                             b.handle === normalized ||
                             b.handle.replace(/-/g, ' ') === normalized ||
@@ -145,29 +148,17 @@ function ProductsContent() {
                     }
                 }
                 
-                // Type filter — resolve slug to Medusa UUID via navigation map
+                // Type filter — resolve slug to Medusa UUID via navigation context
                 if (typeParam) {
-                    await enrichWithApiData(getProductTypes)
-                    
-                    const typeObj = resolveTypeSlug(typeParam)
+                    const typeObj = resolveType(typeParam)
                     if (typeObj?.typeId) {
                         params.type_id = [typeObj.typeId]
-                        titleParts.push(typeObj.value)
+                        titleParts.push(typeObj.name)
                     } else if (typeObj) {
-                        // Type exists in navigation but enrichment didn't
-                        // populate typeId (no products have this type yet).
-                        // Try a direct API lookup as a last resort.
-                        const allTypes = await getProductTypes()
-                        const match = allTypes.find(
-                            t => t.value?.toLowerCase().trim() === typeParam.toLowerCase().trim()
-                        )
-                        if (match) {
-                            params.type_id = [match.id]
-                        } else {
-                            // Type is known but has zero products — force empty
-                            params._emptyResult = true
-                        }
-                        titleParts.push(typeObj.value)
+                        // Type exists in navigation but has no typeId —
+                        // this means no products have this type assigned yet.
+                        params._emptyResult = true
+                        titleParts.push(typeObj.name)
                     } else {
                         // Completely unknown type slug — force empty
                         console.warn(`[products] Unknown type slug: "${typeParam}"`)
@@ -266,11 +257,12 @@ function ProductsContent() {
             setLoading(false)
             setLoadingMore(false)
         }
-    }, [collectionHandle, categoryHandle, typeParam, searchQuery])
+    }, [collectionHandle, categoryHandle, typeParam, searchQuery, navTree, navLoading, resolveType])
 
     useEffect(() => {
+        if (navLoading) return
         loadProducts(0, false)
-    }, [loadProducts])
+    }, [loadProducts, navLoading])
 
     const handleLoadMore = () => {
         loadProducts(currentOffset, true)

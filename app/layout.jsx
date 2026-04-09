@@ -1,4 +1,5 @@
 import './globals.css'
+import { NavigationProvider } from '@/lib/context/NavigationContext'
 import { CartProvider } from '@/lib/context/CartContext'
 import { AuthProvider } from '@/lib/context/AuthContext'
 import CookieBanner from '@/components/molecules/CookieBanner/CookieBanner'
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
                 />
             </head>
             <body>
+                <NavigationProvider>
                 <AuthProvider>
                     <CartProvider>
                         {children}
@@ -29,6 +31,7 @@ export default function RootLayout({ children }) {
                         <CookieBanner />
                     </CartProvider>
                 </AuthProvider>
+                </NavigationProvider>
             </body>
         </html>
     )

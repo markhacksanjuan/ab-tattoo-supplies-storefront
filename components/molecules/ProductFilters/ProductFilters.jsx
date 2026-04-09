@@ -2,14 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getRankedCollections, getRankedCategories, getProductTypes, getProducts } from '@/lib/api/medusa'
-import {
-    PRODUCT_TYPES,
-    resolveTypeSlug,
-    getCategoriesForType,
-    getBrandsForType,
-    enrichWithApiData,
-} from '@/lib/data/navigation'
+import { getRankedCollections, getRankedCategories, getProducts } from '@/lib/api/medusa'
+import { useNavigation } from '@/lib/context/NavigationContext'
 import styles from './ProductFilters.module.css'
 
 /** Max items to show before "Ver más" toggle */
@@ -39,7 +33,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
     const [mobileOpen, setMobileOpen] = useState(false)
     const [expandedCategories, setExpandedCategories] = useState(false)
     const [expandedBrands, setExpandedBrands] = useState(false)
-    const enrichedRef = useRef(false)
+    const { navTree, resolveType, getCategoriesForType, getBrandsForType } = useNavigation()
     
     // Get current filter values from URL
     const currentCollection = searchParams.get('collection') || ''
@@ -70,13 +64,6 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
 
     useEffect(() => {
         loadFilters()
-    }, [])
-
-    // Enrich type IDs in background
-    useEffect(() => {
-        if (enrichedRef.current) return
-        enrichedRef.current = true
-        enrichWithApiData(getProductTypes)
     }, [])
 
     const loadFilters = async () => {
@@ -114,7 +101,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
         const fetchBrands = async () => {
             try {
                 const params = { limit: 500, category_id: [cat.id] }
-                const activeTypeObj = resolveTypeSlug(effectiveType)
+                const activeTypeObj = resolveType(effectiveType)
                 if (activeTypeObj?.typeId) {
                     params.type_id = [activeTypeObj.typeId]
                 }
@@ -211,7 +198,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
     const hasActiveFilters = effectiveCollection || effectiveCategory || effectiveType
 
     // Determine which categories and collections to show based on active type
-    const activeType = resolveTypeSlug(effectiveType)
+    const activeType = resolveType(effectiveType)
     const allowedCategoryHandles = activeType ? getCategoriesForType(effectiveType) : null
     const allowedBrandHandles = activeType ? getBrandsForType(effectiveType) : null
 
@@ -330,13 +317,13 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                             Todos los tipos
                         </button>
                     </li>
-                    {PRODUCT_TYPES.map((type) => (
+                    {navTree.map((type) => (
                         <li key={type.slug}>
                             <button
                                 className={`${styles.filterItem} ${effectiveType === type.slug ? styles.active : ''}`}
                                 onClick={() => updateFilters('type', type.slug)}
                             >
-                                {type.value}
+                                {type.name}
                             </button>
                         </li>
                     ))}
@@ -347,7 +334,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
             {activeType && filteredCategories.length > 0 && (
                 <div className={styles.filterGroup}>
                     <h4 className={styles.filterTitle}>
-                        {`Categorías de ${activeType.value}`}
+                        {`Categorías de ${activeType.name}`}
                     </h4>
                     <ul className={styles.filterList}>
                         <li>
@@ -355,7 +342,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
                                 className={`${styles.filterItem} ${!effectiveCategory ? styles.active : ''}`}
                                 onClick={() => updateFilters('category', '')}
                             >
-                                {getViewAllLabel(activeType.value)}
+                                {getViewAllLabel(activeType.name)}
                             </button>
                         </li>
                         {visibleCategories.map((category) => (
@@ -388,7 +375,7 @@ export default function ProductFilters({ onFiltersChange, onApply, floating = fa
             {filteredCollections.length > 0 && (
                 <div className={styles.filterGroup}>
                     <h4 className={styles.filterTitle}>
-                        {activeType ? `Marcas de ${activeType.value}` : 'Marcas'}
+                        {activeType ? `Marcas de ${activeType.name}` : 'Marcas'}
                     </h4>
                     <ul className={styles.filterList}>
                         <li>

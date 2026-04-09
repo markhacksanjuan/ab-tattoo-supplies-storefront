@@ -78,14 +78,20 @@ export default function ProductDetailPage() {
                 // Inicializar imagen seleccionada
                 setSelectedImage(fetchedProduct.thumbnail || fetchedProduct.images?.[0]?.url || null)
                 
-                // Inicializar opciones seleccionadas con la primera variante
-                if (fetchedProduct.options && fetchedProduct.variants?.[0]) {
+                // Inicializar opciones seleccionadas con la primera variante CON STOCK.
+                // Si ninguna tiene stock, caer en la primera variante como fallback.
+                if (fetchedProduct.options && fetchedProduct.variants?.length) {
+                    const firstInStock = fetchedProduct.variants.find(v => {
+                        if (!v.manage_inventory) return true
+                        return v.inventory_quantity != null && v.inventory_quantity > 0
+                    })
+                    const initialVariant = firstInStock || fetchedProduct.variants[0]
                     const initialOptions = {}
-                    fetchedProduct.variants[0].options?.forEach(opt => {
+                    initialVariant.options?.forEach(opt => {
                         initialOptions[opt.option_id] = opt.value
                     })
                     setSelectedOptions(initialOptions)
-                    setSelectedVariant(fetchedProduct.variants[0])
+                    setSelectedVariant(initialVariant)
                 }
             } else {
                 setError('Producto no encontrado')
