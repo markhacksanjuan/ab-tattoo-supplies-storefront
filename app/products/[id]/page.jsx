@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProduct, getVariantPrice, formatPrice, getAvailableOptionValues, findBestVariant } from '@/lib/api/medusa'
-import { resolveTypeSlug } from '@/lib/data/navigation'
+import { useNavigation } from '@/lib/context/NavigationContext'
 import Header from '@/components/molecules/Header/Header'
 import Footer from '@/components/molecules/Footer/Footer'
 import Button from '@/components/atoms/Button/Button'
@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
     const params = useParams()
     const router = useRouter()
     const { addToCart } = useCart()
+    const { resolveType } = useNavigation()
     const [product, setProduct] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -272,11 +273,11 @@ export default function ProductDetailPage() {
                     <a href="/products">Productos</a>
                     {/* Tipo */}
                     {product.type?.value && (() => {
-                        const typeObj = resolveTypeSlug(product.type.value)
+                        const typeObj = resolveType(product.type.value)
                         return typeObj ? (
                             <>
                                 <span className={styles.breadcrumbSep}>/</span>
-                                <a href={`/products?type=${typeObj.slug}`}>{typeObj.value}</a>
+                                <a href={`/products?type=${typeObj.slug}`}>{typeObj.name}</a>
                             </>
                         ) : null
                     })()}
@@ -290,7 +291,7 @@ export default function ProductDetailPage() {
                         const cat = childCat || product.categories[0]
                         // Omitir si el nombre coincide con el tipo (evita "Tintas / Tintas")
                         if (cat.name?.toLowerCase().trim() === product.type?.value?.toLowerCase().trim()) return null
-                        const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
+                        const typeObj = product.type?.value ? resolveType(product.type.value) : null
                         const typeSlug = typeObj?.slug || ''
                         return (
                             <>
@@ -301,7 +302,7 @@ export default function ProductDetailPage() {
                     })()}
                     {/* Marca (colección) — siempre visible */}
                     {product.collection?.title && (() => {
-                        const typeObj = product.type?.value ? resolveTypeSlug(product.type.value) : null
+                        const typeObj = product.type?.value ? resolveType(product.type.value) : null
                         const typeSlug = typeObj?.slug || ''
                         return (
                             <>

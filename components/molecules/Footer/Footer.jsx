@@ -1,8 +1,12 @@
+'use client'
+
 import Link from 'next/link'
-import { PRODUCT_TYPES } from '@/lib/data/navigation'
+import { useNavigation } from '@/lib/context/NavigationContext'
 import styles from './Footer.module.css'
 
 export default function Footer() {
+    const { navTree } = useNavigation()
+
     return (
         <footer className={styles.footer}>
             <div className={styles.container}>
@@ -22,9 +26,9 @@ export default function Footer() {
                     <div className={styles.column}>
                         <h4 className={styles.columnTitle}>Productos</h4>
                         <Link href="/products" className={styles.link}>Todos los productos</Link>
-                        {PRODUCT_TYPES.map(type => (
+                        {navTree.map(type => (
                             <Link key={type.slug} href={`/products?type=${type.slug}`} className={styles.link}>
-                                {type.value}
+                                {type.name}
                             </Link>
                         ))}
                     </div>
