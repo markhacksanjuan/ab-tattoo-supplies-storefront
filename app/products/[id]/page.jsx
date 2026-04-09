@@ -12,6 +12,9 @@ import { useCart } from '@/lib/context/CartContext'
 import ImageLightbox from '@/components/molecules/ImageLightbox/ImageLightbox'
 import styles from './page.module.css'
 
+/** Número de valores de opción visibles antes de "Ver más". Editar aquí para ajustar. */
+const INITIAL_VARIANTS_SHOWN = 15
+
 export default function ProductDetailPage() {
     const params = useParams()
     const router = useRouter()
@@ -24,6 +27,7 @@ export default function ProductDetailPage() {
     const [selectedImage, setSelectedImage] = useState(null)
     const [quantity, setQuantity] = useState(1)
     const [lightboxOpen, setLightboxOpen] = useState(false)
+    const [expandedOptions, setExpandedOptions] = useState(new Set())
 
     useEffect(() => {
         loadProduct()
@@ -390,32 +394,83 @@ export default function ProductDetailPage() {
                         {product.options && product.options.length > 0 && (
                             <div className={styles.optionsSection}>
                                 {product.options.map(option => {
-                                    const optionValues = getAvailableOptionValues(product, option, selectedOptions)
+                                    const allOptionValues = getAvailableOptionValues(product, option, selectedOptions)
+                                    const isExpanded = expandedOptions.has(option.id)
+                                    const hasMore = allOptionValues.length > INITIAL_VARIANTS_SHOWN
+                                    const visibleValues = hasMore && !isExpanded
+                                        ? allOptionValues.slice(0, INITIAL_VARIANTS_SHOWN)
+                                        : allOptionValues
+                                    const hiddenCount = allOptionValues.length - INITIAL_VARIANTS_SHOWN
+
                                     return (
                                         <div key={option.id} className={styles.optionGroup}>
-                                            <label className={styles.optionLabel}>{option.title}:</label>
+                                            <label className={styles.optionLabel}>
+                                                {option.title}
+                                                {allOptionValues.length > 1 && (
+                                                    <span className={styles.optionCount}> ({allOptionValues.length})</span>
+                                                )}
+                                            </label>
                                             <div className={styles.optionValues}>
-                                                {optionValues.map(value => {
+                                                {visibleValues.map(value => {
                                                     const isSelected = selectedOptions[option.id] === value.value
                                                     const isUnavailable = !value.available && !isSelected
+                                                    const isOutOfStock = value.available && !value.inStock
+
+                                                    let btnClass = styles.optionButton
+                                                    if (isSelected) {
+                                                        btnClass += ` ${styles.optionButtonActive}`
+                                                    } else if (isOutOfStock) {
+                                                        btnClass += ` ${styles.optionButtonOutOfStock}`
+                                                    } else if (isUnavailable) {
+                                                        btnClass += ` ${styles.optionButtonUnavailable}`
+                                                    }
+
                                                     return (
                                                         <button
                                                             key={value.id}
-                                                            className={`${styles.optionButton} ${
-                                                                isSelected
-                                                                    ? styles.optionButtonActive
+                                                            className={btnClass}
+                                                            onClick={isOutOfStock ? undefined : () => handleOptionChange(option.id, value.value)}
+                                                            disabled={isOutOfStock}
+                                                            title={
+                                                                isOutOfStock
+                                                                    ? 'Sin stock'
                                                                     : isUnavailable
-                                                                        ? styles.optionButtonUnavailable
+                                                                        ? 'Combinación no disponible — se ajustarán las demás opciones'
                                                                         : ''
-                                                            }`}
-                                                            onClick={() => handleOptionChange(option.id, value.value)}
-                                                            title={isUnavailable ? 'Combinación no disponible — se ajustarán las demás opciones' : ''}
+                                                            }
                                                         >
                                                             {value.value}
+                                                            {isOutOfStock && <span className={styles.outOfStockLine} />}
                                                         </button>
                                                     )
                                                 })}
                                             </div>
+                                            {hasMore && (
+                                                <button
+                                                    className={styles.variantsToggle}
+                                                    onClick={() => setExpandedOptions(prev => {
+                                                        const next = new Set(prev)
+                                                        if (next.has(option.id)) {
+                                                            next.delete(option.id)
+                                                        } else {
+                                                            next.add(option.id)
+                                                        }
+                                                        return next
+                                                    })}
+                                                >
+                                                    {isExpanded
+                                                        ? 'Ver menos'
+                                                        : `Ver ${hiddenCount} más`
+                                                    }
+                                                    <svg
+                                                        className={`${styles.variantsToggleIcon} ${isExpanded ? styles.variantsToggleIconUp : ''}`}
+                                                        width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                                    >
+                                                        <polyline points="6 9 12 15 18 9" />
+                                                    </svg>
+                                                </button>
+                                            )}
                                         </div>
                                     )
                                 })}

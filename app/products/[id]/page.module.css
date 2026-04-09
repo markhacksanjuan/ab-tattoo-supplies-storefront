@@ -360,6 +360,74 @@
     border-style: dashed;
 }
 
+/* Variante sin stock */
+.optionButtonOutOfStock {
+    position: relative;
+    opacity: 0.35;
+    cursor: not-allowed;
+    color: var(--color-gray-400);
+    border-color: var(--color-gray-100);
+    background-color: var(--color-bg-secondary);
+}
+
+.optionButtonOutOfStock:hover {
+    opacity: 0.45;
+    border-color: var(--color-gray-200);
+    color: var(--color-gray-400);
+}
+
+/* Línea diagonal que cruza el botón (indicador visual de "sin stock") */
+.outOfStockLine {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.outOfStockLine::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    right: 6px;
+    height: 1px;
+    background-color: var(--color-gray-400);
+    transform: rotate(-12deg);
+}
+
+/* Contador de opciones junto al label */
+.optionCount {
+    font-weight: 400;
+    opacity: 0.5;
+    font-size: 0.85em;
+}
+
+/* Botón "Ver más" / "Ver menos" */
+.variantsToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) 0;
+    background: none;
+    border: none;
+    color: var(--color-gold);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.variantsToggle:hover {
+    color: var(--color-gold-hover);
+    text-decoration: underline;
+}
+
+.variantsToggleIcon {
+    transition: transform var(--transition-fast);
+}
+
+.variantsToggleIconUp {
+    transform: rotate(180deg);
+}
+
 .variant {
     display: flex;
     gap: var(--spacing-sm);
