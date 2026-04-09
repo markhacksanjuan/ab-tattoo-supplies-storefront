@@ -42,6 +42,17 @@ export default function ProductCard({ product }) {
         }
         if (product.variants?.length) {
             product.variants.forEach(variant => {
+                // Imágenes asociadas vía admin (variant.images[])
+                if (variant.images?.length) {
+                    variant.images.forEach(img => {
+                        const url = img.url || img
+                        if (url && !urls.has(url)) {
+                            urls.add(url)
+                            imgs.push(url)
+                        }
+                    })
+                }
+                // Fallback: metadata.image o thumbnail
                 const varImg = variant.metadata?.image || variant.thumbnail
                 if (varImg && !urls.has(varImg)) {
                     urls.add(varImg)

@@ -52,9 +52,14 @@ export default function ProductDetailPage() {
         // Reset quantity on variant change
         setQuantity(1)
 
-        // Si la variante tiene imagen propia, cambiar a ella automáticamente
+        // Si la variante tiene imagen propia, cambiar a ella automáticamente.
+        // Prioridad: 1) imágenes asociadas vía admin (variant.images)
+        //            2) metadata.image  3) variant.thumbnail
         if (matchingVariant) {
-            const varImg = matchingVariant.metadata?.image || matchingVariant.thumbnail
+            const varImg =
+                matchingVariant.images?.[0]?.url ||
+                matchingVariant.metadata?.image ||
+                matchingVariant.thumbnail
             if (varImg) {
                 setSelectedImage(varImg)
             }
@@ -115,10 +120,21 @@ export default function ProductDetailPage() {
         }
         if (product.variants?.length) {
             product.variants.forEach(variant => {
+                const variantLabel = variant.title || variant.options?.map(o => o.value).join(' / ') || 'Variante'
+                // 1) Imágenes asociadas vía admin (variant.images[])
+                if (variant.images?.length) {
+                    variant.images.forEach((img, i) => {
+                        const url = img.url || img
+                        if (url && !urls.has(url)) {
+                            urls.add(url)
+                            images.push({ url, label: variantLabel })
+                        }
+                    })
+                }
+                // 2) metadata.image o thumbnail como fallback
                 const variantImg = variant.metadata?.image || variant.thumbnail
                 if (variantImg && !urls.has(variantImg)) {
                     urls.add(variantImg)
-                    const variantLabel = variant.title || variant.options?.map(o => o.value).join(' / ') || 'Variante'
                     images.push({ url: variantImg, label: variantLabel })
                 }
             })
@@ -126,7 +142,7 @@ export default function ProductDetailPage() {
         return images
     })()
 
-    const variantImage = selectedVariant?.metadata?.image || selectedVariant?.thumbnail || null
+    const variantImage = selectedVariant?.images?.[0]?.url || selectedVariant?.metadata?.image || selectedVariant?.thumbnail || null
     const displayImage = selectedImage || variantImage || product?.thumbnail || allImages[0]?.url || null
     const currentIndex = allImages.findIndex(img => img.url === displayImage)
 

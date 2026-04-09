@@ -19,12 +19,13 @@ descripciones y agrupaciones visuales.
 6. [Paso 3 — Refactorizar `Header.jsx`](#6-paso-3--refactorizar-headerjsx)
 7. [Paso 4 — Refactorizar `ProductFilters.jsx`](#7-paso-4--refactorizar-productfiltersjsx)
 8. [Paso 5 — Refactorizar `products/page.jsx`](#8-paso-5--refactorizar-productspagejsx)
-9. [Paso 6 — Refactorizar `HomeCategoryGrid.jsx`](#9-paso-6--refactorizar-homecategorygridjsx)
-10. [Paso 7 — Refactorizar `Footer.jsx`](#10-paso-7--refactorizar-footerjsx)
-11. [Paso 8 — Eliminar `navigation.js`](#11-paso-8--eliminar-navigationjs)
-12. [Paso 9 — Cacheo y rendimiento](#12-paso-9--cacheo-y-rendimiento)
-13. [Checklist de validación](#13-checklist-de-validación)
-14. [Riesgos y rollback](#14-riesgos-y-rollback)
+9. [Paso 6 — Refactorizar `products/[id]/page.jsx`](#9-paso-6--refactorizar-productsidpagejsx)
+10. [Paso 7 — Refactorizar `HomeCategoryGrid.jsx`](#10-paso-7--refactorizar-homecategorygridjsx)
+11. [Paso 8 — Refactorizar `Footer.jsx`](#11-paso-8--refactorizar-footerjsx)
+12. [Paso 9 — Eliminar `navigation.js`](#12-paso-9--eliminar-navigationjs)
+13. [Paso 10 — Cacheo y rendimiento](#13-paso-10--cacheo-y-rendimiento)
+14. [Checklist de validación](#14-checklist-de-validación)
+15. [Riesgos y rollback](#15-riesgos-y-rollback)
 
 ---
 
@@ -45,16 +46,17 @@ navigation.js (hardcoded)         Medusa (base de datos)
 - Añadir una nueva categoría o marca requiere cambiar código y redesplegar.
 - Datos duplicados en dos sitios que se desincronizan.
 
-**Componentes afectados (6 archivos):**
+**Componentes afectados (7 archivos):**
 
 | Archivo | Qué importa de `navigation.js` |
 |---------|-------------------------------|
 | `components/molecules/Header/Header.jsx` | `PRODUCT_TYPES`, `enrichWithApiData` |
 | `app/products/page.jsx` | `PRODUCT_TYPES`, `resolveTypeSlug`, `enrichWithApiData` |
+| `app/products/[id]/page.jsx` | `resolveTypeSlug` (breadcrumbs, 3 usos) |
 | `components/molecules/ProductFilters/ProductFilters.jsx` | `PRODUCT_TYPES`, `resolveTypeSlug`, `getCategoriesForType`, `getBrandsForType`, `enrichWithApiData` |
 | `components/molecules/HomeCategoryGrid/HomeCategoryGrid.jsx` | `PRODUCT_TYPES`, `enrichWithApiData` |
 | `components/molecules/Footer/Footer.jsx` | `PRODUCT_TYPES` |
-| `lib/data/navigation.js` | Fuente (311 líneas — a eliminar) |
+| `lib/data/navigation.js` | Fuente (271 líneas — a eliminar) |
 
 ---
 
@@ -139,22 +141,25 @@ Product Categories y añadir este JSON en el campo `metadata`:
 **Tintas:**
 ```json
 {
-  "icon": "droplets",
+  "icon": "palette",
   "description": "Tintas de tatuaje de alta calidad con pigmentos premium",
   "rank": 1
 }
 ```
 
+> **Estado actual en Medusa:** Ya tiene `icon: "palette"`. **Falta añadir** `rank` y
+> `description`.
+
 **Material:**
 ```json
 {
-  "icon": "package",
+  "icon": "pentool",
   "description": "Material y accesorios esenciales para tu estudio",
   "rank": 2,
   "category_groups": [
     {
       "groupLabel": "Preparación",
-      "handles": ["diluyentes", "desinfectantes", "jabones", "vaselinas", "cremas"]
+      "handles": ["diluyentes", "desinfectantes", "soaps", "vaselinas", "cremas"]
     },
     {
       "groupLabel": "Stencil y Diseño",
@@ -176,6 +181,9 @@ Product Categories y añadir este JSON en el campo `metadata`:
 }
 ```
 
+> **Estado actual en Medusa:** Ya tiene `icon: "pentool"`. **Falta añadir** `rank`,
+> `description` y `category_groups`.
+
 > **Nota:** `category_groups` solo lo tiene Material. Agujas y Tintas no lo necesitan
 > porque sus categorías se muestran como lista plana.
 
@@ -188,21 +196,48 @@ Las categorías hijas no necesitan metadata especial. Solo asegurarse de que:
 
 ### 3.3 Collections (marcas) — añadir metadata de tipo
 
-Para cada collection/marca, añadir `metadata.types` indicando a qué tipo(s) pertenece:
-
-```json
-// Ultra Premium (marca de agujas)
-{ "types": ["Agujas"] }
-
-// Dermaglo (marca de tintas)
-{ "types": ["Tintas"] }
-
-// Protón (marca de material)
-{ "types": ["Material"] }
-```
+Para cada collection/marca, añadir `metadata.types` indicando a qué tipo(s) pertenece.
 
 > Si una marca vendiera productos de varios tipos, el array tendría múltiples valores:
 > `{ "types": ["Agujas", "Tintas"] }`.
+
+**Marcas de Agujas (7)** — `{ "types": ["Agujas"] }`
+
+| Handle | Nombre | metadata |
+|--------|--------|----------|
+| `ultra-premium` | Ultra Premium | `{ "types": ["Agujas"] }` |
+| `ultimate` | Ultimate | `{ "types": ["Agujas"] }` |
+| `dragonhawk` | Dragonhawk | `{ "types": ["Agujas"] }` |
+| `critical-plus` | Critical+ | `{ "types": ["Agujas"] }` |
+| `kwadron` | Kwadron | `{ "types": ["Agujas"] }` |
+| `revo` | Revo | `{ "types": ["Agujas"] }` |
+| `elite` | Elite | `{ "types": ["Agujas"] }` |
+
+**Marcas de Tintas (11)** — `{ "types": ["Tintas"] }`
+
+| Handle | Nombre | metadata |
+|--------|--------|----------|
+| `dermaglo` | Dermaglo | `{ "types": ["Tintas"] }` |
+| `star-brite-colors` | Star Brite Colors | `{ "types": ["Tintas"] }` |
+| `radiant` | Radiant | `{ "types": ["Tintas"] }` |
+| `solid-ink` | Solid Ink | `{ "types": ["Tintas"] }` |
+| `dynamic` | Dynamic | `{ "types": ["Tintas"] }` |
+| `easy-glow` | Easy Glow | `{ "types": ["Tintas"] }` |
+| `vice-vicious` | Vice Vicious | `{ "types": ["Tintas"] }` |
+| `eternal` | Eternal | `{ "types": ["Tintas"] }` |
+| `horitomo` | Horitomo | `{ "types": ["Tintas"] }` |
+| `chris-garver` | Chris Garver | `{ "types": ["Tintas"] }` |
+| `victor-chill` | Victor Chill | `{ "types": ["Tintas"] }` |
+
+**Marcas de Material (5)** — `{ "types": ["Material"] }`
+
+| Handle | Nombre | metadata |
+|--------|--------|----------|
+| `proton` | Protón | `{ "types": ["Material"] }` |
+| `biotatum` | Biotatum | `{ "types": ["Material"] }` |
+| `tattooshop` | TattooShop | `{ "types": ["Material"] }` |
+| `cosco` | Cosco | `{ "types": ["Material"] }` |
+| `stencil-stuff` | Stencil Stuff | `{ "types": ["Material"] }` |
 
 ### 3.4 Verificación
 
@@ -223,6 +258,30 @@ curl -s "${MEDUSA_URL}/store/collections?limit=100" \
 ## 4. Paso 1 — Nueva función API `getNavigationTree()`
 
 **Archivo:** `lib/api/medusa.js`
+
+### 4.1 Prerequisito — Añadir `metadata` a `getCollections()`
+
+La función `getCollections()` actual no solicita el campo `metadata` en su query.
+Sin este campo, `col.metadata?.types` siempre será `undefined` y ninguna marca se
+asignará a ningún tipo. Modificar la función existente:
+
+```diff
+  export async function getCollections() {
+      try {
+          const { collections } = await medusaClient.store.collection.list({
+-             limit: 100
++             limit: 100,
++             fields: '+metadata'
+          })
+          return collections || []
+      } catch (error) {
+          console.error('Error fetching collections:', error)
+          return []
+      }
+  }
+```
+
+### 4.2 Nueva función `getNavigationTree()`
 
 Añadir una nueva función que construye el árbol de navegación completo con una sola
 combinación de llamadas API:
@@ -617,7 +676,46 @@ export function useNavigation() {
 
 ---
 
-## 9. Paso 6 — Refactorizar `HomeCategoryGrid.jsx`
+## 9. Paso 6 — Refactorizar `products/[id]/page.jsx`
+
+**Archivo:** `app/products/[id]/page.jsx`
+
+Este archivo **no estaba listado en el plan original** pero importa `resolveTypeSlug`
+de `navigation.js` para construir los breadcrumbs del producto. Se usa 3 veces en la
+sección de breadcrumbs (líneas ~235–270).
+
+### Cambios:
+
+1. **Eliminar import** de `navigation.js`:
+   ```diff
+   - import { resolveTypeSlug } from '@/lib/data/navigation'
+   + import { useNavigation } from '@/lib/context/NavigationContext'
+   ```
+
+2. **Usar el Context:**
+   ```diff
+   + const { resolveType } = useNavigation()
+   ```
+
+3. **Reemplazar `resolveTypeSlug` por `resolveType`** (3 instancias en breadcrumbs):
+   ```diff
+   - const typeObj = resolveTypeSlug(product.type?.value)
+   + const typeObj = resolveType(product.type?.value)
+   ```
+
+4. **Renombrar propiedad** en textos de breadcrumb:
+   ```diff
+   - {typeObj.value}
+   + {typeObj.name}
+   ```
+
+5. **Verificar que los links de breadcrumb** sigan usando `typeObj.slug` para construir
+   las URLs (`/products?type=${typeObj.slug}`, `/products?type=${typeObj.slug}&category=...`,
+   `/products?type=${typeObj.slug}&collection=...`).
+
+---
+
+## 10. Paso 7 — Refactorizar `HomeCategoryGrid.jsx`
 
 **Archivo:** `components/molecules/HomeCategoryGrid/HomeCategoryGrid.jsx`
 
@@ -661,7 +759,7 @@ export function useNavigation() {
 
 ---
 
-## 10. Paso 7 — Refactorizar `Footer.jsx`
+## 11. Paso 8 — Refactorizar `Footer.jsx`
 
 **Archivo:** `components/molecules/Footer/Footer.jsx`
 
@@ -695,7 +793,7 @@ export function useNavigation() {
 
 ---
 
-## 11. Paso 8 — Eliminar `navigation.js`
+## 12. Paso 9 — Eliminar `navigation.js`
 
 Una vez todos los componentes usen `NavigationContext`:
 
@@ -709,7 +807,7 @@ Una vez todos los componentes usen `NavigationContext`:
 
 ---
 
-## 12. Paso 9 — Cacheo y rendimiento
+## 13. Paso 10 — Cacheo y rendimiento
 
 ### Problema potencial
 El Header debe renderizarse rápido. Si la API tarda, el usuario ve un navbar vacío.
@@ -786,18 +884,18 @@ requiere refactorizar `medusa.js` para soportar llamadas server-side.
 
 ---
 
-## 13. Checklist de validación
+## 14. Checklist de validación
 
 Después de aplicar todos los cambios, verificar cada uno de estos escenarios:
 
-### 13.1 Metadata en Medusa
+### 14.1 Metadata en Medusa
 - [ ] Categoría "Agujas" tiene `metadata.icon = "syringe"`, `metadata.description`, `metadata.rank = 0`
-- [ ] Categoría "Tintas" tiene `metadata.icon = "droplets"`, `metadata.description`, `metadata.rank = 1`
-- [ ] Categoría "Material" tiene `metadata.icon = "package"`, `metadata.description`, `metadata.rank = 2`, `metadata.category_groups`
+- [ ] Categoría "Tintas" tiene `metadata.icon = "palette"`, `metadata.description`, `metadata.rank = 1`
+- [ ] Categoría "Material" tiene `metadata.icon = "pentool"`, `metadata.description`, `metadata.rank = 2`, `metadata.category_groups`
 - [ ] Todas las subcategorías tienen `parent_category_id` correcto y `is_active = true`
 - [ ] Todas las collections tienen `metadata.types` con el tipo correcto
 
-### 13.2 Header / Navbar
+### 14.2 Header / Navbar
 - [ ] Los 3 tipos aparecen en el navbar (Agujas, Tintas, Material)
 - [ ] El orden es correcto (Agujas → Tintas → Material)
 - [ ] Hover en "Agujas" muestra dropdown con: Todas las Agujas, Round Liner, Round Shader, Magnum, Curved Magnum, Long Taper, Otras Agujas, sección Marcas
@@ -807,7 +905,7 @@ Después de aplicar todos los cambios, verificar cada uno de estos escenarios:
 - [ ] La página de productos carga correctamente y muestra título "Tintas — Blancos"
 - [ ] El menú móvil funciona igual que el desktop
 
-### 13.3 ProductFilters
+### 14.3 ProductFilters
 - [ ] Sin tipo seleccionado: se muestran los 3 tipos, categorías raíz, todas las marcas
 - [ ] Seleccionar "Tintas": se muestran solo las categorías de Tintas y solo las marcas de Tintas
 - [ ] Seleccionar "Tintas → Blancos": las marcas se filtran a solo las que tienen productos en Blancos
@@ -815,7 +913,7 @@ Después de aplicar todos los cambios, verificar cada uno de estos escenarios:
 - [ ] Floating filter panel funciona (se abre, selecciona, aplica)
 - [ ] "Borrar todo" limpia todos los filtros
 
-### 13.4 Products page
+### 14.4 Products page
 - [ ] URL `/products` muestra todos los productos
 - [ ] URL `/products?type=agujas` filtra por Agujas
 - [ ] URL `/products?type=tintas&category=tintas-blanco` filtra por Tintas > Blancos
@@ -825,38 +923,39 @@ Después de aplicar todos los cambios, verificar cada uno de estos escenarios:
 - [ ] Búsqueda universal `?q=azul` filtra client-side
 - [ ] "Cargar más productos" funciona con filtros activos
 
-### 13.5 HomeCategoryGrid
+### 14.5 HomeCategoryGrid
 - [ ] Se muestran 3 cards (Agujas, Tintas, Material) + card de Marcas
-- [ ] Los iconos son correctos (syringe, droplets, package)
+- [ ] Los iconos son correctos (syringe, palette, pentool)
 - [ ] Las descripciones aparecen
 - [ ] Click en cada card navega al tipo correcto
 
-### 13.6 Footer
+### 14.6 Footer
 - [ ] Los 3 tipos aparecen en la sección "Productos"
 - [ ] Los links navegan correctamente
 
-### 13.7 Test de cambio dinámico
+### 14.7 Test de cambio dinámico
 - [ ] **Añadir nueva categoría** en Medusa Admin (ej: "Cartuchos" bajo "Agujas") → sin redesplegar, la nueva categoría aparece en navbar, filtros, etc. tras recargar la página
 - [ ] **Renombrar categoría** en Medusa Admin (ej: "Blancos" → "Tintas Blancas") → el cambio se refleja automáticamente
 - [ ] **Añadir nueva marca** en Medusa Admin con metadata `{ "types": ["Tintas"] }` → aparece en el dropdown de Tintas
 - [ ] **Desactivar categoría** (`is_active = false`) → desaparece de la navegación
 
-### 13.8 Rendimiento
+### 14.8 Rendimiento
 - [ ] Primera carga: navbar aparece en < 500ms
 - [ ] Navegación entre páginas: navbar instantáneo (cache en memoria)
 - [ ] No hay FOUC (flash of unstyled content) ni parpadeo visible
 - [ ] Console del navegador sin errores ni warnings
 
-### 13.9 Cleanup
+### 14.9 Cleanup
 - [ ] `lib/data/navigation.js` eliminado
 - [ ] `grep -r "navigation.js" storefront/` no devuelve resultados
 - [ ] `grep -r "PRODUCT_TYPES" storefront/` no devuelve resultados
 - [ ] `grep -r "enrichWithApiData" storefront/` no devuelve resultados
+- [ ] `grep -r "resolveTypeSlug" storefront/` no devuelve resultados
 - [ ] Build (`npm run build`) sin errores
 
 ---
 
-## 14. Riesgos y rollback
+## 15. Riesgos y rollback
 
 ### Riesgos
 | Riesgo | Probabilidad | Impacto | Mitigación |
@@ -871,7 +970,7 @@ Si algo va mal, restaurar `navigation.js` desde git:
 ```bash
 git checkout main -- lib/data/navigation.js
 ```
-Y revertir los cambios en los 5 componentes afectados. La Fase 1 (fix de handles) ya
+Y revertir los cambios en los 7 componentes afectados. La Fase 1 (fix de handles) ya
 está en su propio commit, así que se preserva independientemente.
 
 ---
@@ -882,14 +981,15 @@ está en su propio commit, así que se preserva independientemente.
 |---|-------|----------------|
 | 1 | Configurar metadata en Medusa Admin (§3) | 15 min |
 | 2 | Verificar metadata vía API (§3.4) | 5 min |
-| 3 | Crear `getNavigationTree()` en medusa.js (§4) | 15 min |
+| 3 | Modificar `getCollections()` + crear `getNavigationTree()` en medusa.js (§4) | 15 min |
 | 4 | Crear `NavigationContext.jsx` (§5) | 15 min |
 | 5 | Añadir `NavigationProvider` en `layout.jsx` | 2 min |
 | 6 | Refactorizar Header (§6) | 15 min |
 | 7 | Refactorizar ProductFilters (§7) | 15 min |
 | 8 | Refactorizar products/page.jsx (§8) | 15 min |
-| 9 | Refactorizar HomeCategoryGrid (§9) | 5 min |
-| 10 | Refactorizar Footer (§10) | 5 min |
-| 11 | Eliminar navigation.js (§11) | 5 min |
-| 12 | Ejecutar checklist de validación (§13) | 30 min |
+| 9 | Refactorizar products/[id]/page.jsx (§9) | 5 min |
+| 10 | Refactorizar HomeCategoryGrid (§10) | 5 min |
+| 11 | Refactorizar Footer (§11) | 5 min |
+| 12 | Eliminar navigation.js (§12) | 5 min |
+| 13 | Ejecutar checklist de validación (§14) | 30 min |
 | **Total** | | **~2.5 horas** |
